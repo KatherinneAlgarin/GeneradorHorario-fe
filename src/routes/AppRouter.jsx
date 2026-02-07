@@ -5,24 +5,27 @@ import Login from '../pages/login/Login';
 import HomeDecano from '../pages/decano/HomeDecano';
 import HomeDocente from '../pages/docente/HomeDocente';
 import HomeAdmin from '../pages/admin/HomeAdmin';
+import MainLayout from '../components/layout/MainLayout';
+
 
 export const AppRouter = () => {
-  return (
-    <Routes>
-      {/* Login */}
-      <Route path="/" element={<Navigate to="/login" />} />
+    return (
+        <Routes>
+            {/* Login */}
+            <Route path="/" element={<Navigate to="/login" />} />
+            {/* Ruta Pública */}
+            <Route path="/login" element={<Login />} />
 
-      {/* Ruta Pública */}
-      <Route path="/login" element={<Login />} />
+            {/* Rutas de roles*/}
+            <Route element={<MainLayout />}>
+                <Route path="/admin" element={<HomeAdmin />} />
+                <Route path="/decano" element={<h1>Panel del Decano (Prueba)</h1>} />
+                <Route path="/docente" element={<h1>Panel del Docente (Prueba)</h1>} />
 
-      {/* Rutas de roles*/}
-      <Route path="/admin" element={<HomeAdmin />} />
+            </Route>
 
-      <Route path="/decano" element={<h1>Panel del Decano (Prueba)</h1>} />
-      <Route path="/docente" element={<h1>Panel del Docente (Prueba)</h1>} />
-
-      {/* Ruta de error*/}
-      <Route path="*" element={<h1>404 - Página no encontrada</h1>} />
-    </Routes>
-  );
+            {/* Ruta de error*/}
+            <Route path="*" element={<h1>404 - Página no encontrada</h1>} />
+        </Routes>
+    );
 };
