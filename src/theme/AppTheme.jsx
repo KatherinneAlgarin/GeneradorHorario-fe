@@ -17,19 +17,19 @@ const paletaColores = {
 export const AppTheme = createTheme({
   palette: {
     primary: {
-      main: universityRed[500],
-      light: universityRed[300],
-      dark: universityRed[700],
+      main: paletaColores[500],
+      light: paletaColores[300],
+      dark: paletaColores[700],
       contrastText: '#ffffff',
     },
     secondary: {
-      main: universityRed[900],
+      main: paletaColores[900],
     },
     background: {
       default: '#F4F6F8',
       paper: '#ffffff',
     },
-    customRed: universityRed,
+    customRed: paletaColores,
   },
   typography: {
     fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
