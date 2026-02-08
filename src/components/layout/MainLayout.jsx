@@ -1,55 +1,64 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
-import { Box, AppBar, Toolbar, Typography, Drawer, List, ListItem, ListItemIcon, ListItemText, CssBaseline } from '@mui/material';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-
-//ancho del menú lateral
-const drawerWidth = 240;
+import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
+import './Layout.css';
 
 const MainLayout = () => {
+  const navigate = useNavigate();
+  const location = useLocation(); // Para saber en qué ruta estamos y marcarla activa
+
+  const handleLogout = () => {
+    // Aquí borrarías el token del usuario más adelante
+    navigate('/login');
+  };
+
   return (
-    <Box sx={{ display: 'flex' }}>
-      <CssBaseline /> 
-      {/* BARRA SUPERIOR */}
-      <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
-        <Toolbar>
-          <Typography variant="h6" noWrap component="div">
-            Sistema de Horarios
-          </Typography>
-        </Toolbar>
-      </AppBar>
-
-      {/* MENÚ LATERAL */}
-      <Drawer
-        variant="permanent"
-        sx={{
-          width: drawerWidth,
-          flexShrink: 0,
-          [`& .MuiDrawer-paper`]: { width: drawerWidth, boxSizing: 'border-box' },
-        }}
-      >
-        <Toolbar />
-        <Box sx={{ overflow: 'auto' }}>
-          <List>
-            {/* Aquí irán opciones de menú dinámicas */}
-            <ListItem button>
-              <ListItemIcon>
-                <DashboardIcon />
-              </ListItemIcon>
-              <ListItemText primary="Inicio (Ejemplo)" />
-            </ListItem>
-          </List>
-        </Box>
-      </Drawer>
-
-      {/* CONTENIDO PRINCIPAL, donde cambian las páginas */}
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-        <Toolbar />
+    <div className="layout-container">
+      
+      {/* 1. SIDEBAR */}
+      <aside className="sidebar">
+        <div className="sidebar-logo">Universidad 🎓</div>
         
-        {/* Aquí se renderiza la página que el usuario eligió (Admin, Decano, etc.) */}
-        <Outlet /> 
-      </Box>
-    </Box>
+        <ul className="nav-links">
+          <li className="nav-item">
+            <Link 
+              to="/admin" 
+              className={`nav-link ${location.pathname === '/admin' ? 'active' : ''}`}
+            >
+              Dashboard
+            </Link>
+          </li>
+          <li className="nav-item">
+            <Link to="/admin/usuarios" className="nav-link">
+              Gestionar Usuarios
+            </Link>
+          </li>
+          <li className="nav-item">
+            <Link to="/admin/horarios" className="nav-link">
+              Horarios
+            </Link>
+          </li>
+          {/* Agrega aquí más opciones según necesites */}
+        </ul>
+      </aside>
+
+      {/* 2. HEADER */}
+      <header className="header">
+        <div className="header-title">Panel de Administración</div>
+        
+        <div className="user-profile">
+          <span>Hola, <strong>Administrador</strong></span>
+          <button onClick={handleLogout} className="btn-logout">
+            Salir
+          </button>
+        </div>
+      </header>
+
+      {/* 3. CONTENIDO DINÁMICO */}
+      <main className="main-content">
+        <Outlet />
+      </main>
+
+    </div>
   );
 };
 

@@ -1,9 +1,9 @@
-:root {
+/* :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
+  color-scheme: light;
   color: rgba(255, 255, 255, 0.87);
   background-color: #242424;
 
@@ -28,6 +28,8 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background-color: #4c0819;
+  color: #333;
 }
 
 h1 {
@@ -65,4 +67,37 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+} */
+
+/* src/styles/index.css */
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  
+  /* Desactiva el modo oscuro automático */
+  color-scheme: light; 
+}
+
+/* IMPORTANTE: Esto elimina los márgenes del navegador */
+body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #f4f4f4; /* Fondo gris claro base */
+  overflow-x: hidden; /* Evita scroll horizontal */
+}
+
+/* IMPORTANTE: Esto obliga a React a ocupar toda la pantalla */
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  display: flex; /* Asegura que los hijos llenen el espacio */
+  flex-direction: column;
+  max-width: none; /* Vite suele poner un max-width aquí, ¡esto lo anula! */
+  text-align: left; /* Vite suele centrar el texto, esto lo corrige */
 }

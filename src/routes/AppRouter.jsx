@@ -6,6 +6,7 @@ import HomeDecano from '../pages/decano/HomeDecano';
 import HomeDocente from '../pages/docente/HomeDocente';
 import HomeAdmin from '../pages/admin/HomeAdmin';
 import MainLayout from '../components/layout/MainLayout';
+import LoginLayout from '../components/layout/LoginLayout';
 
 
 export const AppRouter = () => {
@@ -14,7 +15,7 @@ export const AppRouter = () => {
             {/* Login */}
             <Route path="/" element={<Navigate to="/login" />} />
             {/* Ruta Pública */}
-            <Route path="/login" element={<Login />} />
+                <Route path="/login" element={<Login />} />
 
             {/* Rutas de roles*/}
             <Route element={<MainLayout />}>

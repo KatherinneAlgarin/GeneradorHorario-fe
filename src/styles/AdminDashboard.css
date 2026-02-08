@@ -1,0 +1,48 @@
+/* src/styles/AdminDashboard.css */
+
+.dashboard-container {
+  padding: 20px;
+  max-width: 1200px; /* Evita que el contenido se estire demasiado en pantallas gigantes */
+  margin: 0 auto; /* Centra el contenido */
+}
+
+.dashboard-title {
+  color: #333;
+  font-size: 2rem;
+  margin-bottom: 10px;
+  font-weight: 700;
+}
+
+.dashboard-subtitle {
+  color: #666;
+  font-size: 1.1rem;
+  margin-bottom: 30px;
+}
+
+/* Estilos para las tarjetas de resumen */
+.dashboard-card {
+  background-color: white;
+  padding: 25px;
+  border-radius: 12px; /* Un poco más redondeado para verse moderno */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); /* Sombra suave y elegante */
+  border: 1px solid #eaeaea; /* Borde sutil para definir mejor la tarjeta */
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Efecto hover opcional: hace que la tarjeta "flote" al pasar el mouse */
+.dashboard-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-card h3 {
+  margin-top: 0;
+  color: #DA2525; /* Usamos tu rojo institucional para el título de la tarjeta */
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+}
+
+.dashboard-card p {
+  color: #555;
+  line-height: 1.5;
+}

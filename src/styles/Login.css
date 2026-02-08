@@ -1,0 +1,161 @@
+.login-card {
+  background-color: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(99, 12, 12, 0.3);
+  width: 90%;
+  max-width: 450px; /* Tamaño ideal para escritorio */
+  text-align: center;
+  font-family: Arial, sans-serif;
+}
+
+.login-title {
+  color: #3D0A0A; /* Tu color 900 */
+  margin-bottom: 30px;
+  font-size: 28px;
+}
+
+.form-group {
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-sizing: border-box; /* Importante para que el padding no ensanche el input */
+}
+
+.btn-login {
+  width: 100%;
+  padding: 14px;
+  background-color: #DA2525; /* Tu color 500 */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.btn-login:hover {
+  background-color: #B31E1E; /* Tu color 600 */
+}
+
+.forgot-password {
+  margin-top: 20px;
+  display: block;
+  color: #DA2525;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+/* ESTILOS RESPONSIVE */
+
+/* Cuando la pantalla sea menor a 480px (Celulares) */
+@media (max-width: 480px) {
+  .auth-container {
+    padding: 20px;
+  }
+
+  .login-card {
+    padding: 30px 20px;
+    border-radius: 8px; 
+  }
+
+  .login-title {
+    font-size: 24px;
+  }
+
+  .btn-login {
+    padding: 12px;
+  }
+}
+
+/* ... Mantén todo tu CSS anterior aquí ... */
+
+/* ESTILOS PARA EL FLUJO DE RECUPERACIÓN */
+
+.login-subtitle {
+  color: #666;
+  margin-top: -20px; /* Lo acerca al título principal */
+  margin-bottom: 30px;
+  font-size: 16px;
+}
+
+/* Estilo especial para el input del código (fondo gris) */
+.input-code {
+  background-color: #C4C8D4; /* Un gris azulado como en la imagen */
+  border: 1px solid #A0A4B0;
+  color: #333;
+  font-weight: bold;
+  letter-spacing: 2px; /* Separa los números */
+  text-align: center;
+}
+
+/* El texto pequeño de ayuda debajo del input del código */
+.help-text {
+  display: block;
+  font-size: 12px;
+  color: #888;
+  margin-top: 8px;
+  text-align: left;
+}
+
+/* El enlace rojo de "Volver al inicio de sesión" */
+.back-to-login {
+  margin-top: 20px;
+  display: block;
+  color: #DA2525;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer; /* Importante para que parezca un botón/enlace */
+}
+
+.back-to-login:hover {
+  text-decoration: underline;
+}
+
+.error-message {
+  color: #d32f2f; /* Rojo */
+  font-size: 13px;
+  background-color: #ffebee;
+  padding: 8px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  text-align: left;
+  border: 1px solid #ffcdd2;
+  width: 100%;
+}
+
+/* ... Tus estilos anteriores ... */
+
+/* Estilo para el botón cuando está cargando (deshabilitado) */
+.btn-login:disabled {
+  background-color: #cccccc; /* Gris claro */
+  color: #666666; /* Texto gris oscuro */
+  cursor: not-allowed; /* Muestra el cursor de "prohibido" */
+  opacity: 0.8;
+  box-shadow: none; /* Quita la sombra para que se vea plano */
+}
+
+.btn-login:disabled:hover {
+  background-color: #cccccc; /* Evita que cambie de color al pasar el mouse */
+}
+
+@media (max-width: 320px) {
+    .login-title {
+        font-size: 20px;
+    }
+}
