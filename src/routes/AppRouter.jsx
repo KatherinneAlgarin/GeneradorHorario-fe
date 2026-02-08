@@ -15,8 +15,9 @@ export const AppRouter = () => {
             {/* Login */}
             <Route path="/" element={<Navigate to="/login" />} />
             {/* Ruta Pública */}
+            <Route element={<LoginLayout />}>
                 <Route path="/login" element={<Login />} />
-
+            </Route>
             {/* Rutas de roles*/}
             <Route element={<MainLayout />}>
                 <Route path="/admin" element={<HomeAdmin />} />

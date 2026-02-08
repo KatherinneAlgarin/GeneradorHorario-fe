@@ -1,22 +1,15 @@
-/* src/styles/AuthLayout.css */
-
-.auth-container {
-  /* POSICIONAMIENTO NUCLEAR: Asegura que cubra la pantalla sí o sí */
-  position: fixed; 
+.login-layout-container {
+  position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  
-  /* Tu diseño de siempre */
+  width: 100vw;
+  height: 100vh;
   display: flex;
-  justify-content: center; /* Centrado Horizontal */
-  align-items: center;     /* Centrado Vertical */
-  
-  /* El fondo rojo */
+  justify-content: center;
+  align-items: center;
   background: radial-gradient(circle, #631111 0%, #160404 100%);
   background-color: #160404;
-  
-  /* Aseguramos que esté por encima de todo */
-  z-index: 1000; 
+  z-index: 9999;
+  margin: 0;
+  padding: 0;
 }

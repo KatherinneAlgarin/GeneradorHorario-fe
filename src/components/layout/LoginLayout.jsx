@@ -1,16 +1,15 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
-
-// VERIFICA ESTA LÍNEA CUIDADOSAMENTE:
-// Significa: "Sal de layout (..), sal de components (..), entra a styles, busca AuthLayout.css"
+/* IMPORTANTE: La ruta debe coincidir con tu carpeta styles */
 import '../../styles/LoginLayout.css'; 
 
-const AuthLayout = () => {
+const LoginLayout = () => {
   return (
-    <div className="auth-container">
+    /* IMPORTANTE: Esta clase debe ser IGUAL a la del CSS de arriba */
+    <div className="login-layout-container">
       <Outlet />
     </div>
   );
 };
 
-export default AuthLayout;
+export default LoginLayout;
