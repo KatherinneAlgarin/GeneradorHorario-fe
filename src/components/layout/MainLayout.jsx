@@ -33,7 +33,6 @@ const MainLayout = () => {
               Gestión Académica
             </Link>
           </li>
-          {/* ----------------------------------------- */}
 
           <li className="nav-item">
             <Link 

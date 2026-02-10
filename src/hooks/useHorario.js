@@ -4,33 +4,29 @@ export const useHorario = (initialData) => {
   const [scheduleData, setScheduleData] = useState(initialData);
   const [draggedClass, setDraggedClass] = useState(null);
 
-  // Estado del modal
   const [modalState, setModalState] = useState({
     isOpen: false,
-    type: 'view', // 'view', 'add', 'edit'
+    type: 'view',
     data: null,
     targetSlot: null
   });
 
-  // validaciones
   const checkConflicts = (newItem, excludeId = null) => {
-    //mismo espacio ocupado
     const isOccupied = scheduleData.find(c => 
       c.dia === newItem.dia && 
       c.hora_inicio === newItem.hora_inicio && 
       c.id_carrera === newItem.id_carrera &&
       c.id_clase !== excludeId
     );
-    if (isOccupied) return "⚠️ Este horario ya está ocupado en esta carrera.";
+    if (isOccupied) return "Este horario ya está ocupado en esta carrera.";
 
-    // Aula ocupada globalmente
     const roomConflict = scheduleData.find(c => 
       c.dia === newItem.dia && 
       c.hora_inicio === newItem.hora_inicio && 
       c.nombre_aula === newItem.nombre_aula && 
       c.id_clase !== excludeId
     );
-    if (roomConflict) return `⚠️ El aula ${newItem.nombre_aula} ya está ocupada.`;
+    if (roomConflict) return `El aula ${newItem.nombre_aula} ya está ocupada.`;
 
     return null;
   };
@@ -56,7 +52,6 @@ export const useHorario = (initialData) => {
 
   // Gestión modal
   const openModal = (type, data = null, slot = null, careerId = null) => {
-    // Inicializa datos vacíos si es agregar
     const initialData = type === 'add' ? {
       id_clase: '', nombre_asignatura: '', nombre_docente: '', 
       nombre_aula: '', codigo_seccion: '', color: 'color-blue',

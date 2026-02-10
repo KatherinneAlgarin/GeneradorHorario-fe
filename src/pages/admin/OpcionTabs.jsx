@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import Tabs from '../../components/common/Tabs';
 import '../../styles/AdminDashboard.css';
-
-// --- IMPORTAMOS LOS COMPONENTES REALES ---
 import GestorFacultades from './GestorFacultades';
 import GestorCarreras from './GestorCarreras';
 import GestorPlanEstudio from './GestorPlanEstudio';
-import GestorMaterias from './GestorMaterias'; // <--- ¡AHORA SÍ EXISTE!
+import GestorMaterias from './GestorMaterias';
 import GestorAulas from './GestorAulas';
 
 const OpcionTabs = () => {
@@ -16,7 +14,7 @@ const OpcionTabs = () => {
     { id: 'faculties', label: 'Facultades' },
     { id: 'careers', label: 'Carreras' },
     { id: 'plans', label: 'Planes de Estudio' },
-    { id: 'subjects', label: 'Materias' }, // Ahora conecta con GestorMaterias
+    { id: 'subjects', label: 'Materias' },
     { id: 'aulas', label: 'Infraestructura' }
   ];
 

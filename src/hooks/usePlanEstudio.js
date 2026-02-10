@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 
-// Catálogo simulado de carreras
 const mockCarreras = [
   { id_carrera: 'c1', nombre: 'Ing. Desarrollo de Software' },
   { id_carrera: 'c2', nombre: 'Doctorado en Medicina' },

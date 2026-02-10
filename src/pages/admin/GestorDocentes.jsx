@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Table from '../../components/common/Table';
 import SearchBar from '../../components/common/SearchBar';
-import ModalGeneral from '../../components/common/ModalGeneral'; // Asegúrate que sea el Modal Genérico
+import ModalGeneral from '../../components/common/ModalGeneral';
 import { useDocentes } from '../../hooks/useDocentes';
 import '../../styles/AdminDashboard.css'; 
 import BotonImportar from '../../components/common/BotonImportar';
@@ -59,9 +59,8 @@ const GestorDocentes = () => {
     </div>
   );
 
-  // --- CONTENIDO DEL MODAL (Lógica de visualización) ---
+  // --- CONTENIDO DEL MODAL --Arreglar para usar el comoponente de modalgenreal
   const renderModalContent = () => {
-    // CASO 1: VER DETALLES (Info + Historial)
     if (modalState.type === 'details' && formData) {
       return (
         <div className="details-view">

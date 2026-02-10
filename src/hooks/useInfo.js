@@ -10,8 +10,8 @@ const initialStats = {
 export const useInfo = (selectedFacultyId) => {
   const [stats, setStats] = useState(initialStats);
 
-  // Simulación: Si seleccionan facultad, recalculamos materias
-  // Aquí ira lógica de backend real
+  // Simulación
+  // Aquí ira logica de backend real
   const materiasMostradas = selectedFacultyId 
     ? (stats.materias.por_facultad[selectedFacultyId] || 0) 
     : stats.materias.total;

@@ -1,8 +1,5 @@
 import { useState, useMemo } from 'react';
 
-// --- DATOS SIMULADOS (MOCK DATABASE) ---
-
-// 1. Catálogo de Tipos (Simula tabla 'tb_tipo_aula')
 const initialTiposAula = [
   { id_tipo: 1, nombre: 'Aula Teórica' },
   { id_tipo: 2, nombre: 'Laboratorio de Cómputo' },
@@ -11,7 +8,6 @@ const initialTiposAula = [
   { id_tipo: 5, nombre: 'Sala de Reuniones' }
 ];
 
-// 2. Tabla de Aulas (Simula tabla 'tb_aula' con FK)
 const initialAulas = [
   { id_aula: 'a1', nombre: 'A-101', capacidad: 40, id_tipo_aula: 1, equipamiento: 'Proyector, Aire Acondicionado', ubicacion: 'Edificio A', activo: true },
   { id_aula: 'a2', nombre: 'LAB-01', capacidad: 25, id_tipo_aula: 2, equipamiento: '25 PCs, Proyector, Internet', ubicacion: 'Edificio C', activo: true },
@@ -20,22 +16,20 @@ const initialAulas = [
 
 export const useAulas = () => {
   const [aulas, setAulas] = useState(initialAulas);
-  const [tiposAula] = useState(initialTiposAula); // Exponemos el catálogo
+  const [tiposAula] = useState(initialTiposAula);
   const [searchTerm, setSearchTerm] = useState("");
   
   const [modalState, setModalState] = useState({
     isOpen: false,
-    type: 'add', // 'add' | 'edit'
+    type: 'add',
     data: null
   });
 
-  // --- LÓGICA DE FILTRADO (JOIN VISUAL) ---
   const filteredAulas = useMemo(() => {
     if (!searchTerm) return aulas;
     const lowerSearch = searchTerm.toLowerCase();
     
     return aulas.filter(aula => {
-      // Buscamos el nombre del tipo usando el ID
       const nombreTipo = tiposAula.find(t => t.id_tipo === parseInt(aula.id_tipo_aula))?.nombre.toLowerCase() || '';
       
       return (
@@ -47,7 +41,6 @@ export const useAulas = () => {
     });
   }, [aulas, tiposAula, searchTerm]);
 
-  // --- VALIDACIONES INTERNAS ---
   const validateAula = (formData) => {
     if (!formData.nombre || formData.nombre.trim() === "") return "El nombre/número del aula es obligatorio.";
     if (formData.capacidad <= 0) return "La capacidad debe ser mayor a 0.";
@@ -55,9 +48,6 @@ export const useAulas = () => {
     return null;
   };
 
-  // --- ACCIONES PRINCIPALES (HANDLERS) ---
-  
-  // Función ÚNICA para guardar (Add/Edit)
   const handleSaveAula = (formData) => {
     const error = validateAula(formData);
     if (error) {
@@ -65,7 +55,6 @@ export const useAulas = () => {
       return;
     }
 
-    // Convertimos el ID del tipo a número por seguridad
     const dataToSave = { ...formData, id_tipo_aula: parseInt(formData.id_tipo_aula) };
 
     if (modalState.type === 'add') {
@@ -87,7 +76,6 @@ export const useAulas = () => {
     setAulas(aulas.map(a => a.id_aula === id ? { ...a, activo: !a.activo } : a));
   };
 
-  // --- GESTIÓN DEL MODAL ---
   const openAddModal = () => {
     setModalState({ 
       isOpen: true, type: 'add', 
@@ -103,7 +91,7 @@ export const useAulas = () => {
 
   return {
     aulas: filteredAulas,
-    tiposAula, // Catálogo para el <select>
+    tiposAula,
     searchTerm, setSearchTerm,
     modalState,
     openAddModal, openEditModal, closeModal,

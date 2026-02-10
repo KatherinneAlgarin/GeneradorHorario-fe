@@ -18,7 +18,6 @@ const HorarioComponent = ({
   const handleDragStartInternal = (e, classItem) => {
     if (readOnly) return;
     e.dataTransfer.effectAllowed = "move";
-    // esto actualizará el estado draggedClass
     onDragStart(classItem); 
   };
 
@@ -43,7 +42,6 @@ const HorarioComponent = ({
     onDrop(e, day, time);
   };
 
-  // --- RENDERIZADO ---
   const renderCell = (day, time) => {
     const classData = scheduleData.find(c => c.dia === day && c.hora_inicio === time);
 

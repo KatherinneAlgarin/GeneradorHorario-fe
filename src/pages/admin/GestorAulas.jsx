@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import Table from '../../components/common/Table';
 import SearchBar from '../../components/common/SearchBar';
-import ModalGeneral from '../../components/common/ModalGeneral'; // Tu Modal Genérico
+import ModalGeneral from '../../components/common/ModalGeneral';
 import { useAulas } from '../../hooks/useAulas';
 import '../../styles/AdminDashboard.css';
 
 const GestorAulas = () => {
-  // 1. Extraemos TODO del Hook
+
   const { 
     aulas, tiposAula, 
     searchTerm, setSearchTerm, modalState,
@@ -14,7 +14,6 @@ const GestorAulas = () => {
     handleSaveAula, deleteAula, toggleStatus
   } = useAulas();
 
-  // 2. Estado local SOLO para el formulario visual (inputs)
   const [formData, setFormData] = useState(null);
 
   useEffect(() => {
@@ -26,10 +25,8 @@ const GestorAulas = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // 3. Envío al Hook (sin lógica aquí)
   const handleSubmit = () => handleSaveAula(formData);
 
-  // --- COLUMNAS ---
   const columns = [
     { header: 'Aula', accessor: 'nombre' },
     { header: 'Ubicación', accessor: 'ubicacion' },
@@ -37,7 +34,7 @@ const GestorAulas = () => {
     { 
       header: 'Tipo', 
       accessor: 'id_tipo_aula',
-      // Buscamos el nombre usando el catálogo que nos dio el hook
+
       render: (row) => tiposAula.find(t => t.id_tipo === parseInt(row.id_tipo_aula))?.nombre || 'Desconocido'
     },
     { header: 'Equipamiento', accessor: 'equipamiento' },
@@ -109,7 +106,6 @@ const GestorAulas = () => {
                 <label>Tipo de Aula</label>
                 <select name="id_tipo_aula" value={formData.id_tipo_aula} onChange={handleChange}>
                   <option value="">-- Seleccione --</option>
-                  {/* Llenamos el select con el catálogo del Hook */}
                   {tiposAula.map(tipo => (
                     <option key={tipo.id_tipo} value={tipo.id_tipo}>{tipo.nombre}</option>
                   ))}

@@ -1,13 +1,11 @@
 import { useState, useMemo } from 'react';
 
-// Datos Mock de Docentes
 const initialDocentes = [
   { id_docente: "d-001", nombres: "Juan Carlos", apellidos: "Pérez", tipo: "Tiempo Completo", carga_maxima: 40, activo: true },
   { id_docente: "d-002", nombres: "Maria", apellidos: "Rodriguez", tipo: "Hora Clase", carga_maxima: 20, activo: true },
   { id_docente: "d-003", nombres: "Carlos", apellidos: "Gómez", tipo: "Hora Clase", carga_maxima: 12, activo: false },
 ];
 
-// Datos Mock de Historial (Simulando tabla 'clase' + 'asignatura' + 'ciclo')
 const mockClasesHistory = [
   { id_clase: 'c1', id_docente: 'd-001', materia: 'Matemáticas I', ciclo: '01-2025', codigo: 'MAT101' },
   { id_clase: 'c2', id_docente: 'd-001', materia: 'Cálculo II', ciclo: '02-2024', codigo: 'MAT102' },
@@ -18,16 +16,14 @@ export const useDocentes = () => {
   const [docentes, setDocentes] = useState(initialDocentes);
   const [searchTerm, setSearchTerm] = useState("");
   
-  // Nuevo Estado: Historial de materias del docente seleccionado
   const [teachingHistory, setTeachingHistory] = useState([]);
 
   const [modalState, setModalState] = useState({
     isOpen: false,
-    type: 'view', // 'view', 'add', 'edit', 'details' <--- Nuevo tipo 'details'
+    type: 'view',
     data: null
   });
 
-  // --- FILTRADO ---
   const filteredDocentes = useMemo(() => {
     if (!searchTerm) return docentes;
     const lowerSearch = searchTerm.toLowerCase();
@@ -37,18 +33,13 @@ export const useDocentes = () => {
     );
   }, [docentes, searchTerm]);
 
-  // --- VALIDACIÓN ---
   const validateDocente = (formData) => {
     if (!formData.nombres) return "El nombre es obligatorio.";
     if (!formData.apellidos) return "El apellido es obligatorio.";
     return null;
   };
 
-  // --- ACCIONES DE APERTURA DE MODALES ---
-  
-  // 1. Ver Detalles Completos (Info + Historial)
   const openDetailsModal = (docente) => {
-    // Simulamos la petición a la BD: SELECT * FROM clase WHERE id_docente = ...
     const history = mockClasesHistory.filter(h => h.id_docente === docente.id_docente);
     setTeachingHistory(history);
 
@@ -68,11 +59,10 @@ export const useDocentes = () => {
 
   const closeModal = () => {
     setModalState(prev => ({ ...prev, isOpen: false }));
-    setTeachingHistory([]); // Limpiamos el historial al cerrar
+    setTeachingHistory([]); 
   };
 
-  // --- CRUD ---
-  const handleSaveDocente = (formData) => {
+const handleSaveDocente = (formData) => {
     const error = validateDocente(formData);
     if (error) return alert(error);
 

@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 
-// Catálogo simulado (esto vendría de la BD)
 const mockFacultades = [
   { id_facultad: 'f1', nombre: 'Facultad de Ingeniería' },
   { id_facultad: 'f2', nombre: 'Facultad de Medicina' },
@@ -13,7 +12,7 @@ const initialCarreras = [
 
 export const useCarreras = () => {
   const [carreras, setCarreras] = useState(initialCarreras);
-  const [facultades] = useState(mockFacultades); // Catálogo para el select
+  const [facultades] = useState(mockFacultades);
   const [searchTerm, setSearchTerm] = useState("");
   const [modalState, setModalState] = useState({ isOpen: false, type: 'add', data: null });
 
@@ -22,7 +21,6 @@ export const useCarreras = () => {
     const lower = searchTerm.toLowerCase();
     return carreras.filter(c => 
       c.nombre.toLowerCase().includes(lower) || 
-      // Buscamos también por nombre de facultad
       facultades.find(f => f.id_facultad === c.id_facultad)?.nombre.toLowerCase().includes(lower)
     );
   }, [carreras, facultades, searchTerm]);
