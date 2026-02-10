@@ -25,6 +25,15 @@ const MainLayout = () => {
               Dashboard
             </Link>
           </li>
+          <li className="nav-item">
+            <Link 
+                to="/admin/academico" 
+                className={`nav-link ${location.pathname.includes('/academico') ? 'active' : ''}`}
+            >
+              Gestión Académica
+            </Link>
+          </li>
+          {/* ----------------------------------------- */}
 
           <li className="nav-item">
             <Link 
