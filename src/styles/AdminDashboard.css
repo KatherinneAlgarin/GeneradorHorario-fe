@@ -6,6 +6,57 @@
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+/* --- ESTILOS MODERNOS PARA TABS (NUEVO) --- */
+.tabs-container {
+  display: flex;
+  gap: 32px; /* Espacio entre pestañas */
+  border-bottom: 2px solid #e5e7eb; /* Línea gris base */
+  margin-bottom: 30px;
+  padding: 0 10px;
+}
+
+.tab-button {
+  background: transparent;
+  border: none;
+  padding: 12px 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #6b7280; /* Gris suave inactivo */
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  letter-spacing: 0.3px;
+}
+
+.tab-button:hover {
+  color: #1f2937; /* Gris oscuro al pasar mouse */
+}
+
+/* Estado Activo */
+.tab-button.active {
+  color: #DA2525; /* Rojo institucional */
+  font-weight: 700;
+}
+
+/* Línea roja animada debajo de la pestaña activa */
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; /* Se superpone a la línea gris base */
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: #DA2525;
+  border-radius: 3px 3px 0 0;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
 /* --- TARJETAS DE ESTADÍSTICAS (Parte superior) --- */
 .stats-grid {
   display: grid;
@@ -61,21 +112,20 @@
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-  overflow-x: auto; /* Scroll si la pantalla es muy pequeña */
+  overflow-x: auto;
 }
 
 .schedule-table {
   display: grid;
-  /* 1 columna para la hora + 6 columnas para los días (Lun-Sab) */
   grid-template-columns: 100px repeat(6, 1fr); 
   gap: 2px;
-  background-color: #f0f0f0; /* Color de las líneas de la grilla */
+  background-color: #f0f0f0;
   border: 1px solid #e0e0e0;
 }
 
 /* Cabeceras (Días y Hora) */
 .header-cell {
-  background-color: #2c3e50; /* Oscuro elegante */
+  background-color: #2c3e50;
   color: white;
   padding: 15px 5px;
   text-align: center;
@@ -101,19 +151,17 @@
 /* --- CELDAS DEL HORARIO E INTERACCIÓN --- */
 .schedule-cell {
   background-color: white;
-  min-height: 110px; /* Altura mínima de cada bloque */
+  min-height: 110px;
   padding: 4px;
   position: relative;
   transition: background-color 0.2s ease;
 }
 
-/* Efecto visual al arrastrar una clase sobre una celda */
 .schedule-cell.drag-over {
-  background-color: #e3f2fd; /* Azul suave */
+  background-color: #e3f2fd;
   border: 2px dashed #2196f3;
 }
 
-/* Botón fantasma "+" para agregar clase */
 .add-ghost-btn {
   width: 100%;
   height: 100%;
@@ -132,7 +180,7 @@
   background-color: #fafafa;
 }
 
-/* --- TARJETA DE LA CLASE (El bloque de color) --- */
+/* --- TARJETA DE LA CLASE --- */
 .class-card {
   height: 100%;
   padding: 8px;
@@ -141,12 +189,10 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  
-  /* Estilos para Drag & Drop */
   cursor: grab; 
-  position: relative; /* Necesario para posicionar el lápiz */
+  position: relative;
   transition: transform 0.2s, box-shadow 0.2s;
-  border-left: 4px solid rgba(0,0,0,0.15); /* Borde lateral decorativo */
+  border-left: 4px solid rgba(0,0,0,0.15);
 }
 
 .class-card:active {
@@ -170,7 +216,7 @@
 }
 
 .class-room {
-  align-self: flex-end; /* Alinear a la derecha abajo */
+  align-self: flex-end;
   font-size: 0.7rem;
   background: rgba(255,255,255,0.4);
   padding: 2px 5px;
@@ -178,7 +224,7 @@
   font-weight: 600;
 }
 
-/* --- ICONO DE EDICIÓN (Lápiz) --- */
+/* --- ICONO DE EDICIÓN --- */
 .edit-icon {
   position: absolute;
   top: 4px;
@@ -193,7 +239,7 @@
   font-size: 12px;
   color: #333;
   cursor: pointer;
-  opacity: 0; /* Oculto por defecto */
+  opacity: 0;
   transform: scale(0.8);
   transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
@@ -201,7 +247,7 @@
 }
 
 .class-card:hover .edit-icon {
-  opacity: 1; /* Visible al pasar el mouse */
+  opacity: 1;
   transform: scale(1);
 }
 
@@ -217,15 +263,15 @@
 .color-green { background-color: #E8F5E9; color: #2E7D32; border-color: #2E7D32; }
 .color-purple { background-color: #F3E5F5; color: #6A1B9A; border-color: #6A1B9A; }
 
-/* --- MODALES (Ventanas emergentes) --- */
+/* --- MODALES --- */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.6); /* Fondo oscuro semitransparente */
-  backdrop-filter: blur(3px); /* Efecto borroso elegante */
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(3px);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -283,7 +329,7 @@
   border-radius: 6px;
   font-size: 1rem;
   transition: border-color 0.2s;
-  box-sizing: border-box; /* Importante para que no se salga */
+  box-sizing: border-box;
 }
 
 .form-group-modal input:focus {
@@ -323,16 +369,15 @@
   cursor: pointer;
   font-weight: 600;
   color: white;
-  box-shadow: 0 2px 5px rgba(218, 37, 37, 0)
+  box-shadow: 0 2px 5px rgba(218, 37, 37, 0);
 }
 
-/* --- ESTILOS GENERALES DE PÁGINA (Encabezados y Botones) --- */
-
+/* --- ESTILOS GENERALES DE PÁGINA --- */
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px; /* Espacio antes de los filtros */
+  margin-bottom: 24px;
 }
 
 .page-header h2 {
@@ -342,9 +387,9 @@
   color: #333;
 }
 
-/* Botón Principal (+ Nuevo Docente) */
+/* Botón Principal */
 .btn-primary {
-  background-color: #DA2525; /* Tu rojo institucional */
+  background-color: #DA2525;
   color: white;
   border: none;
   padding: 12px 24px;
@@ -354,14 +399,14 @@
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px; /* Espacio entre icono y texto si hubiera */
+  gap: 8px;
   transition: all 0.3s ease;
   box-shadow: 0 4px 6px rgba(218, 37, 37, 0.2);
 }
 
 .btn-primary:hover {
-  background-color: #b31e1e; /* Rojo más oscuro al pasar el mouse */
-  transform: translateY(-2px); /* Pequeño efecto de elevación */
+  background-color: #b31e1e;
+  transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(218, 37, 37, 0.3);
 }
 
@@ -370,40 +415,37 @@
 }
 
 /* --- BARRA DE FILTROS Y BÚSQUEDA --- */
-
 .filters-bar {
   background-color: white;
   padding: 16px 20px;
   border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.03); /* Sombra muy suave */
-  margin-bottom: 20px; /* Espacio antes de la tabla */
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+  margin-bottom: 20px;
   border: 1px solid #f0f0f0;
   display: flex;
   align-items: center;
 }
 
-/* Componente SearchBar */
 .search-container {
   display: flex;
   align-items: center;
-  background-color: #f9fafb; /* Fondo gris muy claro */
+  background-color: #f9fafb;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   padding: 10px 16px;
   width: 100%;
-  max-width: 400px; /* Ancho máximo del buscador */
+  max-width: 400px;
   transition: all 0.2s ease;
 }
 
-/* Efecto al hacer clic en el buscador */
 .search-container:focus-within {
   background-color: white;
-  border-color: #DA2525; /* Borde rojo al escribir */
-  box-shadow: 0 0 0 3px rgba(218, 37, 37, 0.1); /* Resplandor rojo suave */
+  border-color: #DA2525;
+  box-shadow: 0 0 0 3px rgba(218, 37, 37, 0.1);
 }
 
 .search-icon {
-  color: #9ca3af; /* Gris icono */
+  color: #9ca3af;
   font-size: 1.1rem;
   margin-right: 12px;
   display: flex;
@@ -416,22 +458,21 @@
   width: 100%;
   font-size: 0.95rem;
   color: #374151;
-  outline: none; /* Quitamos el borde azul por defecto del navegador */
+  outline: none;
 }
 
 .search-input::placeholder {
   color: #9ca3af;
 }
 
-/* --- ESTILOS DE VISTA DETALLADA (MODAL) --- */
-
+/* --- ESTILOS DE VISTA DETALLADA --- */
 .info-card-summary {
   background-color: #f8f9fa;
   border-radius: 8px;
   padding: 15px;
   border: 1px solid #e9ecef;
   display: grid;
-  grid-template-columns: 1fr 1fr; /* Dos columnas de info */
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
 
@@ -440,7 +481,6 @@
   margin-right: 5px;
 }
 
-/* Tabla interna de historial (Mini tabla) */
 .history-table-container {
   border: 1px solid #eee;
   border-radius: 6px;
@@ -454,7 +494,7 @@
 }
 
 .history-table th {
-  background-color: #333; /* Encabezado oscuro para diferenciar */
+  background-color: #333;
   color: white;
   padding: 8px 12px;
   text-align: left;
@@ -495,7 +535,6 @@
   border-color: #C8E6C9;
 }
 
-/* Botón Importar, Exportar, Cancelar acciones menores*/
 .btn-secondary {
   background-color: white;
   color: #555;
@@ -517,16 +556,14 @@
   color: #333;
 }
 
-/* --- UTILIDADES DE FORMULARIO Y MODALES --- */
-
-/* Para el textarea de descripción */
+/* --- UTILIDADES --- */
 .form-textarea {
   width: 100%;
   padding: 10px;
   border-radius: 6px;
   border: 1px solid #ccc;
-  font-family: inherit; /* Heredar fuente del sistema */
-  resize: vertical; /* Permitir cambiar tamaño solo verticalmente */
+  font-family: inherit;
+  resize: vertical;
   min-height: 80px;
   outline: none;
   transition: border-color 0.2s;
@@ -536,24 +573,20 @@
   border-color: #DA2525;
 }
 
-/* Para elementos que ocupan todo el ancho (como la descripción) */
 .full-width {
   width: 100%;
-  grid-column: 1 / -1; /* Si usas grid, esto hace que ocupe toda la fila */
+  grid-column: 1 / -1;
+  flex: 1 1 100%;
 }
 
-/* Títulos y textos */
 .text-muted {
   color: #555;
 }
 
-/* Cursores y selección */
 .cursor-pointer {
   cursor: pointer;
-  user-select: none; /* Evita que se seleccione el texto al hacer clic rápido */
+  user-select: none;
 }
-
-/* --- ESTILOS ESPECÍFICOS PARA FORMULARIOS --- */
 
 .form-select {
   width: 100%;
@@ -566,7 +599,6 @@
   outline: none;
   transition: border-color 0.2s;
   cursor: pointer;
-  /* Appearance standard para browsers */
   appearance: none;
   background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007CB2%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
   background-repeat: no-repeat;
@@ -578,21 +610,15 @@
   border-color: #DA2525;
 }
 
-/* Utilidad para que ocupe todo el ancho disponible */
-.full-width {
-  width: 100%;
-  flex: 1 1 100%;
-}
-
 .checkbox-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); /* Crea columnas automáticas */
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 10px;
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 6px;
   background-color: #f9f9f9;
-  max-height: 150px; /* Scroll si hay muchos equipos */
+  max-height: 150px;
   overflow-y: auto;
 }
 
@@ -603,10 +629,50 @@
   cursor: pointer;
   font-size: 0.9rem;
   color: #555;
-  user-select: none; /* Evita que se seleccione el texto al hacer clic */
+  user-select: none;
   transition: color 0.2s;
 }
 
 .checkbox-label:hover {
   color: #DA2525;
+}
+
+/* --- ESTILOS PARA GESTIÓN DE AULAS --- */
+.btn-view-details {
+  background-color: white;
+  border: 1px solid #ddd;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: #555;
+  transition: all 0.2s;
+}
+
+.btn-view-details:hover {
+  background-color: #f0f0f0;
+  border-color: #ccc;
+  color: #333;
+}
+
+.equip-list-container {
+  padding: 10px;
+}
+
+.equip-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.equip-list li {
+  background-color: #f9f9f9;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #eee;
+  font-size: 0.95rem;
+  color: #333;
 }

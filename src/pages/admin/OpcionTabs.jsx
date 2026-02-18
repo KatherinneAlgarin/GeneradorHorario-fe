@@ -15,7 +15,6 @@ const OpcionTabs = () => {
     { id: 'careers', label: 'Carreras' },
     { id: 'plans', label: 'Planes de Estudio' },
     { id: 'subjects', label: 'Materias' },
-    { id: 'aulas', label: 'Infraestructura' }
   ];
 
   const renderContent = () => {
@@ -24,7 +23,6 @@ const OpcionTabs = () => {
       case 'careers': return <GestorCarreras />;
       case 'plans': return <GestorPlanEstudio />;
       case 'subjects': return <GestorMaterias />;
-      case 'aulas': return <GestorAulas />;
       default: return <GestorFacultades />;
     }
   };

@@ -13,6 +13,8 @@ const GestorAulas = () => {
     columns, 
     searchTerm, setSearchTerm, 
     modalState, 
+    equipModal,
+    closeEquipModal,
     openAddModal, openEditModal, closeModal, 
     handleSaveAula 
   } = useAulas();
@@ -93,8 +95,16 @@ const GestorAulas = () => {
 
             <div className="form-row">
               <div className="form-group-modal">
-                <label>Ubicación Detallada</label>
-                <input name="ubicacion" value={formData.ubicacion} onChange={handleChange} placeholder="Ej. Planta Alta" />
+                <label>Ubicación</label>
+                <select 
+                    name="ubicacion" 
+                    value={formData.ubicacion} 
+                    onChange={handleChange} 
+                    className="form-select"
+                >
+                    <option value="Campus">Campus</option>
+                    <option value="Fuera de Campus">Fuera de Campus</option>
+                </select>
               </div>
               <div className="form-group-modal">
                 <label>Capacidad</label>
@@ -107,7 +117,6 @@ const GestorAulas = () => {
                 <label>Tipo de Aula</label>
                 <select name="id_tipo_aula" value={formData.id_tipo_aula} onChange={handleChange} className="form-select">
                   <option value="">-- Seleccione Tipo --</option>
-                  {/* Validación extra: tipos && tipos.map... */}
                   {tipos && tipos.map(t => (
                     <option key={t.id_tipo_aula} value={t.id_tipo_aula}>{t.nombre}</option>
                   ))}
@@ -118,9 +127,7 @@ const GestorAulas = () => {
             <div className="form-row">
               <div className="form-group-modal full-width">
                 <label>Equipamiento Disponible</label>
-                
                 <div className="checkbox-grid">
-                  {/* Aquí estaba el error. Con "equipos &&" aseguramos que exista antes del map */}
                   {equipos && equipos.length > 0 ? (
                     equipos.map(eq => (
                       <label key={eq.id_equipamiento} className="checkbox-label">
@@ -133,14 +140,34 @@ const GestorAulas = () => {
                       </label>
                     ))
                   ) : (
-                    <span style={{color: '#999', fontSize: '0.9rem'}}>No hay equipos registrados en el catálogo.</span>
+                    <span style={{color: '#999'}}>No hay equipos.</span>
                   )}
                 </div>
-                
               </div>
             </div>
           </>
         )}
+      </ModalGeneral>
+
+      <ModalGeneral
+        isOpen={equipModal.isOpen}
+        onClose={closeEquipModal}
+        title={`Equipamiento: ${equipModal.aulaNombre}`}
+        footer={<button className="btn-primary" onClick={closeEquipModal}>Cerrar</button>}
+      >
+        <div className="equip-list-container">
+            {equipModal.listaEquipos.length > 0 ? (
+                <ul className="equip-list">
+                    {equipModal.listaEquipos.map((nombre, idx) => (
+                        <li key={idx}>{nombre}</li>
+                    ))}
+                </ul>
+            ) : (
+                <p style={{textAlign: 'center', color: '#666', padding: '20px'}}>
+                    Este aula no tiene equipamiento registrado.
+                </p>
+            )}
+        </div>
       </ModalGeneral>
     </div>
   );
