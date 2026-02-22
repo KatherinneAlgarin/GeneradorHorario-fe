@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import '../../styles/Login.css';
+
+import { supabase } from '../../services/supabaseClient';
+import { getUserRole } from '../../services/authService';
+import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -23,15 +26,43 @@ export default function Login() {
     setCurrentView(view);
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    setError("");
     setIsLoading(true);
-    
-    //esta es una simulacion de espera
-    setTimeout(() => {
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
       setIsLoading(false);
-      navigate('/admin');
-    }, 1500);
+      setError("Correo o contraseña incorrectos.");
+      return;
+    }
+
+    const userRole = await getUserRole();
+
+    if (!userRole) {
+      setIsLoading(false);
+      setError("El usuario no está asociado a ningún rol.");
+      return;
+    }
+
+    setIsLoading(false);
+
+    if (userRole.rol === "docente") {
+      navigate("/docente");
+    }
+
+    if (userRole.rol === "decano") {
+      navigate("/decano");
+    }
+
+    if (userRole.rol === "admin_general") {
+      navigate("/admin");
+    }
   };
 
   const handleSendCode = (e) => {

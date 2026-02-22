@@ -1,14 +1,16 @@
 import React from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
+import { supabase } from "../../services/supabaseClient";
 import '../../styles/Layout.css';
 
 const MainLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleLogout = () => {
-    navigate('/login');
-  };
+  const handleLogout = async () => {
+  await supabase.auth.signOut();
+  navigate("/login");
+};
 
   return (
     <div className="layout-container">
