@@ -26,9 +26,26 @@ const RoleRoute = ({ allowedRoles, children }) => {
 
   if (loading) return null;
 
-  if (!role || !allowedRoles.includes(role)) {
-    return <Navigate to="/login" />;
+  if (!role) {
+  return <Navigate to="/login" />;
   }
+
+  if (!allowedRoles.includes(role)) {
+
+    if (role === "admin_general") {
+      return <Navigate to="/admin" />;
+    }
+
+    if (role === "decano") {
+      return <Navigate to="/decano" />;
+    }
+  
+    if (role === "docente") {
+      return <Navigate to="/docente" />;
+    }
+  
+    return <Navigate to="/login" />;
+}
 
   return children;
 };
