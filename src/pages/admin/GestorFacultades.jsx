@@ -18,10 +18,10 @@ const GestorFacultades = () => {
     loading
   } = useFacultades();
 
-  // Obtenemos los datos directamente del estado del modal en el hook
+
   const formData = modalState.data;
 
-  // Acciones de la tabla
+
   const renderActions = (row) => (
     <div className="action-buttons">
       <button className="btn-icon edit" onClick={() => openEditModal(row)} title="Editar">✏️</button>
