@@ -9,10 +9,9 @@ export const useFacultades = () => {
   const [modalState, setModalState] = useState({
     isOpen: false,
     type: 'add',
-    data: { codigo: '', nombre: '', descripcion: '', activo: true }
+    data: { nombre: '', descripcion: '', activo: true } // Quitamos codigo
   });
 
-  // 1. Definimos fetchFacultades de forma estable primero
   const fetchFacultades = useCallback(async () => {
     setLoading(true);
     try {
@@ -23,26 +22,27 @@ export const useFacultades = () => {
     } finally {
       setLoading(false);
     }
-  }, []); // Referencia estable
+  }, []);
 
-  // 2. Efecto para cargar datos al inicio
   useEffect(() => {
     fetchFacultades();
   }, [fetchFacultades]);
 
-  // 3. Manejo de inputs
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
+    // Si es un checkbox, usamos 'checked', de lo contrario 'value'
+    const val = type === 'checkbox' ? checked : value;
+    
     setModalState(prev => ({
       ...prev,
-      data: { ...prev.data, [name]: value }
+      data: { ...prev.data, [name]: val }
     }));
   };
 
-  // 4. Acciones
   const handleSaveFacultad = async (formData) => {
-    if (!formData.codigo || !formData.nombre) {
-      return alert("Código y Nombre son obligatorios.");
+    // Solo validamos nombre ahora
+    if (!formData.nombre) {
+      return alert("El nombre es obligatorio.");
     }
 
     try {
@@ -76,51 +76,33 @@ export const useFacultades = () => {
     }
   };
 
-  const toggleStatus = useCallback(async (id, currentStatus) => {
-    try {
-      await apiRequest(`/facultades/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify({ activo: !currentStatus })
-      });
-      await fetchFacultades();
-    } catch (error) {
-      console.error("Error al cambiar estado:", error);
-    }
-  }, [fetchFacultades]);
-
-  // 5. Columnas y filtrado
+  // Columnas simplificadas
   const columns = useMemo(() => [
-    { header: 'Código', accessor: 'codigo' },
     { header: 'Nombre Facultad', accessor: 'nombre' },
     { header: 'Descripción', accessor: 'descripcion' },
     { 
       header: 'Estado', 
       accessor: 'activo',
       render: (row) => (
-        <span 
-          className={`status-badge ${row.activo ? 'status-active' : 'status-inactive'} cursor-pointer`}
-          onClick={() => toggleStatus(row.id_facultad, row.activo)}
-        >
+        <span className={`status-badge ${row.activo ? 'status-active' : 'status-inactive'}`}>
           {row.activo ? 'Activo' : 'Inactivo'}
         </span>
       )
     }
-  ], [toggleStatus]);
+  ], []); // Ya no depende de toggleStatus
 
   const filteredFacultades = useMemo(() => {
     const lower = searchTerm.toLowerCase();
     return facultades.filter(f => 
       f.nombre?.toLowerCase().includes(lower) || 
-      f.codigo?.toLowerCase().includes(lower) ||
       f.descripcion?.toLowerCase().includes(lower)
     );
   }, [facultades, searchTerm]);
 
-  // 6. Modales
   const openAddModal = () => {
     setModalState({ 
       isOpen: true, type: 'add', 
-      data: { codigo: '', nombre: '', descripcion: '', activo: true } 
+      data: { nombre: '', descripcion: '', activo: true } 
     });
   };
 
