@@ -16,7 +16,6 @@ export const useCarreras = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // Nota: Tu index.ts monta en /api/carreras y /api/facultades
       const [carrerasData, facultadesData] = await Promise.all([
         apiRequest('/carreras'),
         apiRequest('/facultades')
@@ -64,7 +63,6 @@ export const useCarreras = () => {
           body: JSON.stringify(payload)
         });
       } else {
-        // Asegúrate de tener la ruta PUT en tu backend para carreras
         await apiRequest(`/carreras/${formData.id_carrera}`, {
           method: 'PUT',
           body: JSON.stringify(payload)
@@ -82,7 +80,7 @@ export const useCarreras = () => {
     { header: 'Nombre Carrera', accessor: 'nombre' },
     { 
       header: 'Facultad', 
-      accessor: 'facultad', // Cambiado para usar el include del backend
+      accessor: 'facultad', 
       render: (row) => row.facultad?.nombre || '---'
     },
     { header: 'Descripción', accessor: 'descripcion' },

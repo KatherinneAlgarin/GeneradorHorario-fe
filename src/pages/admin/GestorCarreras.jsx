@@ -6,14 +6,12 @@ import { useCarreras } from '../../hooks/useCarreras';
 import '../../styles/AdminDashboard.css';
 
 const GestorCarreras = () => {
-  // ÚNICO HOOK PERMITIDO
   const { 
     carreras, facultades, columns, searchTerm, setSearchTerm, 
     modalState, openAddModal, openEditModal, closeModal, 
     handleSaveCarrera, handleInputChange, loading
   } = useCarreras();
 
-  // Los datos del formulario se leen directamente del hook
   const formData = modalState.data;
 
   const renderActions = (row) => (
