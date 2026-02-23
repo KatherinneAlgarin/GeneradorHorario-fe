@@ -12,7 +12,7 @@ export const useFacultades = () => {
     data: { codigo: '', nombre: '', descripcion: '', activo: true }
   });
 
-
+  // 1. Definimos fetchFacultades de forma estable primero
   const fetchFacultades = useCallback(async () => {
     setLoading(true);
     try {
@@ -23,13 +23,14 @@ export const useFacultades = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, []); // Referencia estable
 
-
+  // 2. Efecto para cargar datos al inicio
   useEffect(() => {
     fetchFacultades();
   }, [fetchFacultades]);
 
+  // 3. Manejo de inputs
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setModalState(prev => ({
@@ -38,7 +39,7 @@ export const useFacultades = () => {
     }));
   };
 
-
+  // 4. Acciones
   const handleSaveFacultad = async (formData) => {
     if (!formData.codigo || !formData.nombre) {
       return alert("Código y Nombre son obligatorios.");
@@ -87,7 +88,7 @@ export const useFacultades = () => {
     }
   }, [fetchFacultades]);
 
-
+  // 5. Columnas y filtrado
   const columns = useMemo(() => [
     { header: 'Código', accessor: 'codigo' },
     { header: 'Nombre Facultad', accessor: 'nombre' },
@@ -115,8 +116,7 @@ export const useFacultades = () => {
     );
   }, [facultades, searchTerm]);
 
-
-  
+  // 6. Modales
   const openAddModal = () => {
     setModalState({ 
       isOpen: true, type: 'add', 
