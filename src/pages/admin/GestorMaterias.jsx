@@ -7,7 +7,7 @@ import '../../styles/AdminDashboard.css';
 
 const GestorMaterias = () => {
   const { 
-    materias, tiposAula, planes, columns, 
+    materias, tiposAula, planes, ciclos, columns, 
     searchTerm, setSearchTerm, 
     modalState, loading,
     openAddModal, openEditModal, closeModal, 
@@ -29,7 +29,6 @@ const GestorMaterias = () => {
       <button 
         className="btn-text-edit" 
         onClick={() => handleOpenEdit(row)} 
-        title="Editar Materia"
       >
         Editar
       </button>
@@ -47,12 +46,12 @@ const GestorMaterias = () => {
         <SearchBar 
           value={searchTerm} 
           onChange={setSearchTerm} 
-          placeholder="Buscar por código, nombre o tipo de aula..." 
+          placeholder="Buscar por código o nombre..." 
         />
       </div>
 
       {loading ? (
-        <div className="loading-container">Cargando catálogo...</div>
+        <div className="loading-container">Cargando materias...</div>
       ) : (
         <Table columns={columns} data={materias} actions={renderActions} />
       )}
@@ -84,13 +83,12 @@ const GestorMaterias = () => {
 
               <div className="form-row">
                 <div className="form-group-modal">
-                  <label>Plan de Estudios {modalState.type === 'edit' && <small>(No editable)</small>}</label>
+                  <label>Plan de Estudios</label>
                   <select 
                     name="id_plan_estudio" 
                     value={formData.id_plan_estudio || ''} 
                     onChange={handleChange} 
-                    className="form-select" 
-                    disabled={modalState.type === 'edit'}
+                    className="form-select"
                   >
                     <option value="">-- Seleccione Plan --</option>
                     {planes.map(p => (
@@ -98,15 +96,22 @@ const GestorMaterias = () => {
                     ))}
                   </select>
                 </div>
+
                 <div className="form-group-modal">
-                  <label>Ciclo {modalState.type === 'edit' && <small>(No editable)</small>}</label>
-                  <input 
-                    type="number" 
+                  <label>Ciclo Recomendado</label>
+                  <select 
                     name="ciclo_recomendado" 
                     value={formData.ciclo_recomendado || ''} 
                     onChange={handleChange} 
-                    disabled={modalState.type === 'edit'} 
-                  />
+                    className="form-select"
+                  >
+                    <option value="">-- Seleccione Ciclo --</option>
+                    {ciclos.map((c, index) => (
+                      <option key={c.id_ciclo_academico} value={index + 1}>
+                        {c.nombre}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

@@ -6,6 +6,7 @@ import GestorCarreras from './GestorCarreras';
 import GestorPlanEstudio from './GestorPlanEstudio';
 import GestorMaterias from './GestorMaterias';
 import GestorAulas from './GestorAulas';
+import GestorCiclos from './GestorCiclos';
 
 const OpcionTabs = () => {
   const [activeTab, setActiveTab] = useState('faculties');
@@ -15,6 +16,7 @@ const OpcionTabs = () => {
     { id: 'careers', label: 'Carreras' },
     { id: 'plans', label: 'Planes de Estudio' },
     { id: 'subjects', label: 'Materias' },
+    { id: 'ciclos', label: 'Ciclos Académicos' }
   ];
 
   const renderContent = () => {
@@ -23,6 +25,7 @@ const OpcionTabs = () => {
       case 'careers': return <GestorCarreras />;
       case 'plans': return <GestorPlanEstudio />;
       case 'subjects': return <GestorMaterias />;
+      case 'ciclos': return <GestorCiclos />;
       default: return <GestorFacultades />;
     }
   };

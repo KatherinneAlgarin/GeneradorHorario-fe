@@ -5,6 +5,7 @@ export const useMaterias = () => {
   const [materias, setMaterias] = useState([]);
   const [tiposAula, setTiposAula] = useState([]);
   const [planes, setPlanes] = useState([]);
+  const [ciclos, setCiclos] = useState([]); 
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
   
@@ -17,14 +18,16 @@ export const useMaterias = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [m, t, p] = await Promise.all([
+      const [m, t, p, c] = await Promise.all([
         apiRequest('/asignaturas'),
         apiRequest('/tipos-aula'),
-        apiRequest('/planes-estudio')
+        apiRequest('/planes-estudio'),
+        apiRequest('/ciclos')
       ]);
       setMaterias(Array.isArray(m) ? m : []);
       setTiposAula(Array.isArray(t) ? t : []);
       setPlanes(Array.isArray(p) ? p : []);
+      setCiclos(Array.isArray(c) ? c : []);
     } catch (error) {
       console.error("Error al cargar datos:", error);
     } finally {
@@ -81,15 +84,15 @@ export const useMaterias = () => {
   }, [materias, searchTerm]);
 
   const handleSaveMateria = async (formData) => {
-    if (!formData.nombre || !formData.codigo) {
-      return alert("Nombre y Código son obligatorios.");
+    if (!formData.nombre || !formData.codigo || !formData.id_plan_estudio || !formData.ciclo_recomendado) {
+      return alert("Todos los campos son obligatorios.");
     }
     try {
       const payload = {
         ...formData,
         horas_teoricas: parseInt(formData.horas_teoricas) || 0,
         horas_practicas: parseInt(formData.horas_practicas) || 0,
-        ciclo_recomendado: parseInt(formData.ciclo_recomendado) || 1
+        ciclo_recomendado: parseInt(formData.ciclo_recomendado)
       };
       
       const url = modalState.type === 'add' ? '/asignaturas' : `/asignaturas/actualizar/${formData.id_asignatura}`;
@@ -107,7 +110,7 @@ export const useMaterias = () => {
     const initialData = { 
       codigo: '', nombre: '', requiere_tipo_aula: '', 
       horas_teoricas: 0, horas_practicas: 0, 
-      id_plan_estudio: '', ciclo_recomendado: 1 
+      id_plan_estudio: '', ciclo_recomendado: '' 
     };
     setModalState({ isOpen: true, type: 'add', data: initialData });
     return initialData;
@@ -118,9 +121,8 @@ export const useMaterias = () => {
     const dataToEdit = { 
       ...item, 
       id_plan_estudio: planRelacion.id_plan_estudio || '',
-      ciclo_recomendado: planRelacion.ciclo_recomendado || 1
+      ciclo_recomendado: planRelacion.ciclo_recomendado || ''
     };
-
     setModalState({ isOpen: true, type: 'edit', data: dataToEdit });
     return dataToEdit; 
   };
@@ -128,7 +130,7 @@ export const useMaterias = () => {
   const closeModal = () => setModalState(prev => ({ ...prev, isOpen: false }));
 
   return {
-    materias: filteredMaterias, tiposAula, planes, columns,
+    materias: filteredMaterias, tiposAula, planes, ciclos, columns,
     searchTerm, setSearchTerm, modalState, loading,
     openAddModal, openEditModal, closeModal, handleSaveMateria
   };
