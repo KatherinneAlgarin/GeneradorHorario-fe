@@ -1,79 +1,97 @@
-import React, { useState, useMemo } from 'react';
-
-const initialTipos = [
-  { id_tipo_aula: 1, nombre: 'Aula Teórica Común', activo: true },
-  { id_tipo_aula: 2, nombre: 'Laboratorio de Cómputo', activo: true },
-  { id_tipo_aula: 3, nombre: 'Laboratorio de Ciencias', activo: true },
-  { id_tipo_aula: 4, nombre: 'Taller de Arquitectura', activo: true },
-  { id_tipo_aula: 5, nombre: 'Auditorio', activo: true },
-];
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { apiRequest } from '../services/api';
 
 export const useTiposAula = () => {
-  const [tipos, setTipos] = useState(initialTipos);
+  const [tipos, setTipos] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  
+  const [loading, setLoading] = useState(false);
+
   const [modalState, setModalState] = useState({
     isOpen: false,
     type: 'add',
-    data: null
+    data: { nombre: '', descripcion: '' }
   });
 
-  const toggleStatus = (id) => {
-    setTipos(tipos.map(t => 
-      t.id_tipo_aula === id ? { ...t, activo: !t.activo } : t
-    ));
+  const fetchTipos = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await apiRequest('/tipos-aula');
+      setTipos(data);
+    } catch (error) {
+      console.error("Error al cargar tipos de aula:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTipos();
+  }, [fetchTipos]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    
+    setModalState(prev => ({
+      ...prev,
+      data: { ...prev.data, [name]: value }
+    }));
   };
 
   const columns = useMemo(() => [
-    { header: 'Nombre del Tipo', accessor: 'nombre' },
-    { 
-      header: 'Estado', 
-      accessor: 'activo',
-      render: (row) => (
-        <span 
-          className={`status-badge ${row.activo ? 'status-active' : 'status-inactive'} cursor-pointer`}
-          onClick={() => toggleStatus(row.id_tipo_aula)}
-          title="Clic para Activar/Desactivar"
-        >
-          {row.activo ? 'Activo' : 'Inactivo'}
-        </span>
-      )
-    }
-  ], [tipos]);
+    { header: 'Nombre', accessor: 'nombre' },
+    { header: 'Descripción', accessor: 'descripcion' }
+  ], []);
 
   const filteredTipos = useMemo(() => {
     if (!searchTerm) return tipos;
     const lower = searchTerm.toLowerCase();
-    return tipos.filter(t => t.nombre.toLowerCase().includes(lower));
+    return tipos.filter(t => 
+      t.nombre?.toLowerCase().includes(lower) || 
+      t.descripcion?.toLowerCase().includes(lower)
+    );
   }, [tipos, searchTerm]);
 
-  const handleSaveTipo = (formData) => {
+  const handleSaveTipo = async (formData) => {
     if (!formData.nombre || formData.nombre.trim() === "") {
-      return alert("El nombre del tipo de aula es obligatorio.");
+      return alert("El nombre es obligatorio.");
     }
 
-    if (modalState.type === 'add') {
-      const maxId = tipos.length > 0 ? Math.max(...tipos.map(t => parseInt(t.id_tipo_aula))) : 0;
-      
-      const newTipo = { 
-        ...formData, 
-        id_tipo_aula: maxId + 1, 
-        activo: true 
-      };
-      setTipos([...tipos, newTipo]);
-    } else {
-      // Editar
-      setTipos(tipos.map(t => t.id_tipo_aula === formData.id_tipo_aula ? formData : t));
+    try {
+      if (modalState.type === 'add') {
+        await apiRequest('/tipos-aula', {
+          method: 'POST',
+          body: JSON.stringify(formData)
+        });
+      } else {
+        await apiRequest(`/tipos-aula/actualizar/${formData.id_tipo_aula}`, {
+          method: 'PUT',
+          body: JSON.stringify(formData)
+        });
+      }
+      await fetchTipos();
+      closeModal();
+    } catch (error) {
+      console.error("Error al guardar:", error);
+      alert("Error al procesar la solicitud");
     }
-    closeModal();
   };
 
-  // --- GESTIÓN MODAL ---
+  const deleteTipo = async (id) => {
+    if (window.confirm("¿Confirma eliminar este tipo de aula?")) {
+      try {
+        await apiRequest(`/tipos-aula/eliminar/${id}`, { method: 'DELETE' });
+        await fetchTipos();
+      } catch (error) {
+        console.error("Error al eliminar:", error);
+      }
+    }
+  };
+
   const openAddModal = () => {
     setModalState({ 
       isOpen: true, 
       type: 'add', 
-      data: { nombre: '', activo: true } 
+      data: { nombre: '', descripcion: '' } 
     });
   };
 
@@ -89,6 +107,9 @@ export const useTiposAula = () => {
     searchTerm, setSearchTerm,
     modalState,
     openAddModal, openEditModal, closeModal,
-    handleSaveTipo
+    handleSaveTipo,
+    handleInputChange,
+    deleteTipo,
+    loading
   };
 };

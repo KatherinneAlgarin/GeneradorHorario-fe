@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Table from '../../components/common/Table'; 
 import SearchBar from '../../components/common/SearchBar';
 import ModalGeneral from '../../components/common/ModalGeneral'; 
@@ -12,51 +12,46 @@ const GestorTiposAula = () => {
     searchTerm, setSearchTerm, 
     modalState, 
     openAddModal, openEditModal, closeModal, 
-    handleSaveTipo 
+    handleSaveTipo,
+    handleInputChange,
+    deleteTipo,
+    loading
   } = useTiposAula();
 
-  const [formData, setFormData] = useState(null);
-
-  useEffect(() => {
-    if (modalState.isOpen) setFormData(modalState.data);
-  }, [modalState]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  const formData = modalState.data;
 
   const renderActions = (row) => (
     <div className="action-buttons">
       <button className="btn-icon edit" onClick={() => openEditModal(row)} title="Editar Tipo">✏️</button>
+      <button className="btn-icon delete" onClick={() => deleteTipo(row.id_tipo_aula)} title="Eliminar">🗑️</button>
     </div>
   );
 
   return (
     <div className="tab-view-container">
-      {/* HEADER */}
       <div className="page-header">
         <h3 className="text-muted">Tipos de Aula</h3>
         <button className="btn-primary" onClick={openAddModal}>+ Nuevo Tipo</button>
       </div>
 
-      {/* FILTROS */}
       <div className="filters-bar">
         <SearchBar 
           value={searchTerm} 
           onChange={setSearchTerm} 
-          placeholder="Buscar tipo (ej. Laboratorio)..." 
+          placeholder="Buscar tipo..." 
         />
       </div>
 
-      {/* TABLA */}
-      <Table 
-        columns={columns} 
-        data={tipos} 
-        actions={renderActions} 
-      />
+      {loading ? (
+        <p>Cargando tipos de aula...</p>
+      ) : (
+        <Table 
+          columns={columns} 
+          data={tipos} 
+          actions={renderActions} 
+        />
+      )}
 
-      {/* MODAL */}
       <ModalGeneral
         isOpen={modalState.isOpen}
         onClose={closeModal}
@@ -69,18 +64,33 @@ const GestorTiposAula = () => {
         }
       >
         {formData && (
-          <div className="form-row">
-            <div className="form-group-modal full-width">
-              <label>Descripción del Tipo</label>
-              <input 
-                name="nombre" 
-                value={formData.nombre} 
-                onChange={handleChange} 
-                placeholder="Ej. Laboratorio de Química" 
-                autoFocus
-              />
+          <>
+            <div className="form-row">
+              <div className="form-group-modal full-width">
+                <label>Nombre</label>
+                <input 
+                  name="nombre" 
+                  value={formData.nombre || ''} 
+                  onChange={handleInputChange} 
+                  placeholder="Ej. Laboratorio de Química" 
+                  autoFocus
+                />
+              </div>
             </div>
-          </div>
+
+            <div className="form-row">
+              <div className="form-group-modal full-width">
+                <label>Descripción</label>
+                <textarea 
+                  name="descripcion"
+                  className="form-textarea"
+                  value={formData.descripcion || ''} 
+                  onChange={handleInputChange} 
+                  placeholder="Breve descripción..."
+                />
+              </div>
+            </div>
+          </>
         )}
       </ModalGeneral>
     </div>

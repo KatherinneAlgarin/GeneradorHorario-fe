@@ -1,11 +1,5 @@
-import React, { useState, useMemo } from 'react';
-
-const MOCK_TIPOS = [
-  { id_tipo_aula: 1, nombre: 'Aula Teórica Común' },
-  { id_tipo_aula: 2, nombre: 'Laboratorio de Cómputo' },
-  { id_tipo_aula: 3, nombre: 'Laboratorio de Ciencias' },
-  { id_tipo: 4, nombre: 'Taller de Arquitectura' }
-];
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { apiRequest } from '../services/api';
 
 const MOCK_EQUIPOS = [
   { id_equipamiento: 1, nombre: 'Proyector Multimedia' },
@@ -15,39 +9,17 @@ const MOCK_EQUIPOS = [
   { id_equipamiento: 5, nombre: 'Escritorio Docente' }
 ];
 
-const INITIAL_AULAS = [
-  { 
-    id_aula: 1, 
-    nombre: 'A-201', 
-    edificio: 'B', 
-    ubicacion: 'Campus',
-    capacidad: 40, 
-    id_tipo_aula: 1, 
-    equipamiento_ids: [1, 2, 5], 
-    activo: true 
-  },
-  { 
-    id_aula: 2, 
-    nombre: 'AGRO-FIELD', 
-    edificio: 'N/A', 
-    ubicacion: 'Fuera de Campus',
-    capacidad: 25, 
-    id_tipo_aula: 3, 
-    equipamiento_ids: [1, 2, 4, 5], 
-    activo: true 
-  }
-];
-
 export const useAulas = () => {
-  const [aulas, setAulas] = useState(INITIAL_AULAS);
-  const [tipos] = useState(MOCK_TIPOS);
-  const [equipos] = useState(MOCK_EQUIPOS);
+  const [aulas, setAulas] = useState([]);
+  const [tipos, setTipos] = useState([]);
+  const [equipos, setEquipos] = useState(MOCK_EQUIPOS);
   const [searchTerm, setSearchTerm] = useState("");
-  
+  const [loading, setLoading] = useState(false);
+
   const [modalState, setModalState] = useState({
     isOpen: false,
     type: 'add',
-    data: null
+    data: { nombre: '', edificio: '', ubicacion: 'Campus', capacidad: 30, id_tipo_aula: '', equipamiento_ids: [], activo: true }
   });
 
   const [equipModal, setEquipModal] = useState({
@@ -56,16 +28,57 @@ export const useAulas = () => {
     listaEquipos: []
   });
 
+  const fetchAulas = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await apiRequest('/aulas');
+      setAulas(data);
+    } catch (error) {
+      console.error("Error al cargar aulas:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const toggleStatus = (id) => {
-    setAulas(aulas.map(a => a.id_aula === id ? { ...a, activo: !a.activo } : a));
+  const fetchTipos = useCallback(async () => {
+    try {
+      const data = await apiRequest('/tipos-aula');
+      setTipos(data);
+    } catch (error) {
+      console.error("Error al cargar tipos de aula:", error);
+    }
+  }, []);
+
+  const fetchEquipos = useCallback(async () => {
+    try {
+      const data = await apiRequest('/equipamiento');
+      setEquipos(data);
+    } catch (error) {
+      console.error("Error al cargar equipamiento:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAulas();
+    fetchTipos();
+    fetchEquipos();
+  }, [fetchAulas, fetchTipos, fetchEquipos]);
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    const val = type === 'checkbox' ? checked : value;
+    
+    setModalState(prev => ({
+      ...prev,
+      data: { ...prev.data, [name]: val }
+    }));
   };
 
   const openEquipamientoModal = (row) => {
-    const nombres = row.equipamiento_ids.map(id => {
+    const nombres = row.equipamiento_ids?.map(id => {
         const eq = equipos.find(e => e.id_equipamiento === parseInt(id));
         return eq ? eq.nombre : null;
-    }).filter(Boolean);
+    }).filter(Boolean) || [];
 
     setEquipModal({
         isOpen: true,
@@ -76,6 +89,21 @@ export const useAulas = () => {
 
   const closeEquipModal = () => setEquipModal({ isOpen: false, aulaNombre: '', listaEquipos: [] });
 
+  const toggleStatus = async (id) => {
+    const aula = aulas.find(a => a.id_aula === id);
+    if (!aula) return;
+    
+    const newStatus = !aula.activo;
+    try {
+      await apiRequest(`/aulas/actualizar/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ ...aula, activo: newStatus })
+      });
+      await fetchAulas();
+    } catch (error) {
+      console.error("Error al cambiar estado:", error);
+    }
+  };
 
   const columns = useMemo(() => [
     { header: 'Aula', accessor: 'nombre' },
@@ -86,8 +114,9 @@ export const useAulas = () => {
       header: 'Tipo', 
       accessor: 'id_tipo_aula',
       render: (row) => {
-        const tipo = tipos.find(t => t.id_tipo_aula === parseInt(row.id_tipo_aula));
-        return tipo ? tipo.nombre : '---';
+        const tipoId = row.id_tipo_aula;
+        const tipo = tipos.find(t => t.id_tipo_aula == tipoId || t.id_tipo_aula === tipoId);
+        return tipo ? tipo.nombre : `(${tipoId})`;
       }
     },
     { 
@@ -114,25 +143,24 @@ export const useAulas = () => {
         </span>
       )
     }
-  ], [aulas, tipos, equipos]);
-
+  ], [tipos, equipos]);
 
   const filteredAulas = useMemo(() => {
     if (!searchTerm) return aulas;
     const lower = searchTerm.toLowerCase();
     
     return aulas.filter(a => {
-      const nombreTipo = tipos.find(t => t.id_tipo_aula === parseInt(a.id_tipo_aula))?.nombre.toLowerCase() || '';
+      const nombreTipo = tipos.find(t => t.id_tipo_aula == a.id_tipo_aula || t.id_tipo_aula === a.id_tipo_aula)?.nombre?.toLowerCase() || '';
       return (
-        a.nombre.toLowerCase().includes(lower) || 
-        a.edificio.toLowerCase().includes(lower) ||
-        a.ubicacion.toLowerCase().includes(lower) ||
+        a.nombre?.toLowerCase().includes(lower) || 
+        a.edificio?.toLowerCase().includes(lower) ||
+        a.ubicacion?.toLowerCase().includes(lower) ||
         nombreTipo.includes(lower)
       );
     });
   }, [aulas, tipos, searchTerm]);
 
-  const handleSaveAula = (formData) => {
+  const handleSaveAula = async (formData) => {
     if (!formData.nombre || !formData.edificio || !formData.id_tipo_aula || !formData.capacidad || !formData.ubicacion) {
       return alert("Complete los campos obligatorios.");
     }
@@ -144,13 +172,35 @@ export const useAulas = () => {
       equipamiento_ids: formData.equipamiento_ids ? formData.equipamiento_ids.map(id => parseInt(id)) : []
     };
 
-    if (modalState.type === 'add') {
-      const maxId = aulas.length > 0 ? Math.max(...aulas.map(a => a.id_aula)) : 0;
-      setAulas([...aulas, { ...dataToSave, id_aula: maxId + 1, activo: true }]);
-    } else {
-      setAulas(aulas.map(a => a.id_aula === dataToSave.id_aula ? dataToSave : a));
+    try {
+      if (modalState.type === 'add') {
+        await apiRequest('/aulas', {
+          method: 'POST',
+          body: JSON.stringify(dataToSave)
+        });
+      } else {
+        await apiRequest(`/aulas/actualizar/${formData.id_aula}`, {
+          method: 'PUT',
+          body: JSON.stringify(dataToSave)
+        });
+      }
+      await fetchAulas();
+      closeModal();
+    } catch (error) {
+      console.error("Error al guardar:", error);
+      alert("Error al procesar la solicitud");
     }
-    closeModal();
+  };
+
+  const deleteAula = async (id) => {
+    if (window.confirm("¿Confirma eliminar esta aula?")) {
+      try {
+        await apiRequest(`/aulas/${id}`, { method: 'DELETE' });
+        await fetchAulas();
+      } catch (error) {
+        console.error("Error al eliminar:", error);
+      }
+    }
   };
 
   const openAddModal = () => {
@@ -173,6 +223,9 @@ export const useAulas = () => {
     equipModal,
     openAddModal, openEditModal, closeModal,
     closeEquipModal,
-    handleSaveAula
+    handleSaveAula,
+    handleInputChange,
+    deleteAula,
+    loading
   };
 };

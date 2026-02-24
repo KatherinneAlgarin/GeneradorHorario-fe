@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Table from '../../components/common/Table';
 import SearchBar from '../../components/common/SearchBar';
 import ModalGeneral from '../../components/common/ModalGeneral'; 
@@ -16,28 +16,22 @@ const GestorAulas = () => {
     equipModal,
     closeEquipModal,
     openAddModal, openEditModal, closeModal, 
-    handleSaveAula 
+    handleSaveAula,
+    handleInputChange,
+    deleteAula,
+    loading
   } = useAulas();
 
-  const [formData, setFormData] = useState(null);
-
-  useEffect(() => {
-    if (modalState.isOpen) setFormData(modalState.data);
-  }, [modalState]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  const formData = modalState.data;
 
   const handleCheckboxChange = (id_equipamiento) => {
     const id = parseInt(id_equipamiento);
-    setFormData(prev => {
-      const currentIds = prev.equipamiento_ids || [];
+    setModalState(prev => {
+      const currentIds = prev.data.equipamiento_ids || [];
       if (currentIds.includes(id)) {
-        return { ...prev, equipamiento_ids: currentIds.filter(itemId => itemId !== id) };
+        return { ...prev, data: { ...prev.data, equipamiento_ids: currentIds.filter(itemId => itemId !== id) } };
       } else {
-        return { ...prev, equipamiento_ids: [...currentIds, id] };
+        return { ...prev, data: { ...prev.data, equipamiento_ids: [...currentIds, id] } };
       }
     });
   };
@@ -45,6 +39,7 @@ const GestorAulas = () => {
   const renderActions = (row) => (
     <div className="action-buttons">
       <button className="btn-icon edit" onClick={() => openEditModal(row)} title="Editar Aula">✏️</button>
+      <button className="btn-icon delete" onClick={() => deleteAula(row.id_aula)} title="Eliminar">🗑️</button>
     </div>
   );
 
@@ -63,11 +58,15 @@ const GestorAulas = () => {
         />
       </div>
 
-      <Table 
-        columns={columns} 
-        data={aulas} 
-        actions={renderActions} 
-      />
+      {loading ? (
+        <p>Cargando aulas...</p>
+      ) : (
+        <Table 
+          columns={columns} 
+          data={aulas} 
+          actions={renderActions} 
+        />
+      )}
 
       <ModalGeneral
         isOpen={modalState.isOpen}
@@ -85,11 +84,11 @@ const GestorAulas = () => {
             <div className="form-row">
               <div className="form-group-modal">
                 <label>Nombre / Número</label>
-                <input name="nombre" value={formData.nombre} onChange={handleChange} placeholder="Ej. A-201" />
+                <input name="nombre" value={formData.nombre || ''} onChange={handleInputChange} placeholder="Ej. A-201" />
               </div>
               <div className="form-group-modal">
                 <label>Edificio</label>
-                <input name="edificio" value={formData.edificio} onChange={handleChange} placeholder="Ej. B" />
+                <input name="edificio" value={formData.edificio || ''} onChange={handleInputChange} placeholder="Ej. B" />
               </div>
             </div>
 
@@ -98,8 +97,8 @@ const GestorAulas = () => {
                 <label>Ubicación</label>
                 <select 
                     name="ubicacion" 
-                    value={formData.ubicacion} 
-                    onChange={handleChange} 
+                    value={formData.ubicacion || ''} 
+                    onChange={handleInputChange} 
                     className="form-select"
                 >
                     <option value="Campus">Campus</option>
@@ -108,14 +107,14 @@ const GestorAulas = () => {
               </div>
               <div className="form-group-modal">
                 <label>Capacidad</label>
-                <input type="number" name="capacidad" value={formData.capacidad} onChange={handleChange} min="1" />
+                <input type="number" name="capacidad" value={formData.capacidad || ''} onChange={handleInputChange} min="1" />
               </div>
             </div>
 
             <div className="form-row">
               <div className="form-group-modal full-width">
                 <label>Tipo de Aula</label>
-                <select name="id_tipo_aula" value={formData.id_tipo_aula} onChange={handleChange} className="form-select">
+                <select name="id_tipo_aula" value={formData.id_tipo_aula || ''} onChange={handleInputChange} className="form-select">
                   <option value="">-- Seleccione Tipo --</option>
                   {tipos && tipos.map(t => (
                     <option key={t.id_tipo_aula} value={t.id_tipo_aula}>{t.nombre}</option>
@@ -143,6 +142,21 @@ const GestorAulas = () => {
                     <span style={{color: '#999'}}>No hay equipos.</span>
                   )}
                 </div>
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group-modal checkbox-group">
+                <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                  <input 
+                    type="checkbox"
+                    name="activo"
+                    checked={formData.activo}
+                    onChange={handleInputChange}
+                    style={{ width: '20px', height: '20px' }}
+                  />
+                  <span>Aula Activa</span>
+                </label>
               </div>
             </div>
           </>
