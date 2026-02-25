@@ -12,19 +12,19 @@ export const useMaterias = () => {
   const [modalState, setModalState] = useState({ 
     isOpen: false, 
     type: 'add', 
-    data: null 
+    data: {
+      codigo: '', nombre: '', requiere_tipo_aula: '',
+      horas_teoricas: '', horas_practicas: '',
+      id_plan_estudio: '', ciclo_recomendado: ''
+    }
   });
 
   const [notificationModal, setNotificationModal] = useState({
-    show: false,
-    message: '',
-    type: 'error'
+    show: false, message: '', type: 'error'
   });
 
   const [notification, setNotification] = useState({
-    show: false,
-    message: '',
-    type: 'error'
+    show: false, message: '', type: 'error'
   });
 
   const fetchData = useCallback(async () => {
@@ -42,6 +42,9 @@ export const useMaterias = () => {
       setCiclos(Array.isArray(c) ? c : []);
     } catch (error) {
       console.error("Error al cargar datos:", error);
+      setNotification({
+        show: true, message: "Error de conexión al cargar catálogos.", type: 'error'
+      });
     } finally {
       setLoading(false);
     }
@@ -49,26 +52,23 @@ export const useMaterias = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setModalState(prev => ({
+      ...prev,
+      data: { ...prev.data, [name]: value }
+    }));
+  };
+
   const toggleStatus = useCallback(async (id, currentStatus) => {
     if (!currentStatus) return;
     if (window.confirm("¿Confirma dar de baja esta asignatura?")) {
       try {
         await apiRequest(`/asignaturas/desactivar/${id}`, { method: 'PUT' });
-        setNotification({
-          show: true,
-          message: 'Asignatura desactivada correctamente',
-          type: 'success'
-        });
+        setNotification({ show: true, message: 'Asignatura desactivada correctamente', type: 'success' });
         await fetchData();
       } catch (error) {
-        if (error.statusCode >= 500) {
-          console.error("Error al desactivar asignatura:", error);
-        }
-        setNotification({
-          show: true,
-          message: error.message || 'Error al desactivar la asignatura',
-          type: 'error'
-        });
+        setNotification({ show: true, message: error.message || 'Error al desactivar la asignatura', type: 'error' });
       }
     }
   }, [fetchData]);
@@ -109,11 +109,7 @@ export const useMaterias = () => {
 
   const handleSaveMateria = async (formData) => {
     if (!formData.nombre || !formData.codigo || !formData.id_plan_estudio || !formData.ciclo_recomendado) {
-      setNotificationModal({
-        show: true,
-        message: 'Todos los campos son obligatorios.',
-        type: 'error'
-      });
+      setNotificationModal({ show: true, message: 'Todos los campos son obligatorios.', type: 'error' });
       return;
     }
     try {
@@ -136,44 +132,49 @@ export const useMaterias = () => {
       await fetchData();
       setTimeout(() => closeModal(), 1500);
       } catch (error) {
-      if (error.statusCode >= 500) {
-        console.error("Error al guardar asignatura:", error);
-      }
-      setNotificationModal({
-        show: true,
-        message: error.message || "Error al procesar la solicitud",
-        type: 'error'
-      });
+      setNotificationModal({ show: true, message: error.message || "Error al procesar la solicitud", type: 'error' });
     }
   };
 
   const openAddModal = () => {
-    const initialData = { 
-      codigo: '', nombre: '', requiere_tipo_aula: '', 
-      horas_teoricas: 0, horas_practicas: 0, 
-      id_plan_estudio: '', ciclo_recomendado: '' 
-    };
-    setModalState({ isOpen: true, type: 'add', data: initialData });
-    return initialData;
+    setNotificationModal({ show: false, message: '', type: 'error' });
+    setModalState({ 
+      isOpen: true, 
+      type: 'add', 
+      data: { 
+        codigo: '', nombre: '', requiere_tipo_aula: '', 
+        horas_teoricas: '', horas_practicas: '',
+        id_plan_estudio: '', ciclo_recomendado: '' 
+      } 
+    });
   };
 
   const openEditModal = (item) => {
+    setNotificationModal({ show: false, message: '', type: 'error' });
     const planRelacion = item.plan_asignatura?.[0] || {};
-    const dataToEdit = { 
-      ...item, 
-      id_plan_estudio: planRelacion.id_plan_estudio || '',
-      ciclo_recomendado: planRelacion.ciclo_recomendado || ''
-    };
-    setModalState({ isOpen: true, type: 'edit', data: dataToEdit });
-    return dataToEdit; 
+    setModalState({ 
+      isOpen: true, 
+      type: 'edit', 
+      data: { 
+        ...item, 
+        horas_teoricas: item.horas_teoricas === 0 ? '' : item.horas_teoricas,
+        horas_practicas: item.horas_practicas === 0 ? '' : item.horas_practicas,
+        id_plan_estudio: planRelacion.id_plan_estudio || '',
+        ciclo_recomendado: planRelacion.ciclo_recomendado || ''
+      } 
+    });
   };
 
-  const closeModal = () => setModalState(prev => ({ ...prev, isOpen: false }));
+  const closeModal = () => {
+    setNotificationModal({ show: false, message: '', type: 'error' });
+    setModalState(prev => ({ ...prev, isOpen: false }));
+  };
 
   return {
     materias: filteredMaterias, tiposAula, planes, ciclos, columns,
     searchTerm, setSearchTerm, modalState, loading,
-    openAddModal, openEditModal, closeModal, handleSaveMateria,
+    openAddModal, openEditModal, closeModal, 
+    handleSaveMateria, handleInputChange,
     notificationModal, setNotificationModal,
     notification, setNotification
   };

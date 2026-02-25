@@ -59,6 +59,7 @@ const GestorTiposAula = () => {
 
       {notification.show && (
         <Notification
+          show={notification.show}
           message={notification.message}
           type={notification.type}
           onClose={() => setNotification({ ...notification, show: false })}
@@ -86,13 +87,16 @@ const GestorTiposAula = () => {
           </>
         }
       >
+        {/* Notificación dentro del Modal (Crear o Actualizar) */}
         {notificationModal.show && modalState.isOpen && (
           <Notification
+            show={notificationModal.show} /* PROPIEDAD AÑADIDA */
             message={notificationModal.message}
             type={notificationModal.type}
             onClose={() => setNotificationModal({ ...notificationModal, show: false })}
           />
         )}
+        
         {formData && (
           <>
             <div className="form-row">

@@ -52,6 +52,7 @@ const GestorAulas = () => {
 
       {notification.show && (
         <Notification
+          show={notification.show}
           message={notification.message}
           type={notification.type}
           onClose={() => setNotification({ ...notification, show: false })}
@@ -79,13 +80,16 @@ const GestorAulas = () => {
           </>
         }
       >
+        {/* Notificación dentro del modal */}
         {notificationModal.show && modalState.isOpen && (
           <Notification
+            show={notificationModal.show}
             message={notificationModal.message}
             type={notificationModal.type}
             onClose={() => setNotificationModal({ ...notificationModal, show: false })}
           />
         )}
+        
         {formData && (
           <>
             <div className="form-row">
@@ -95,7 +99,7 @@ const GestorAulas = () => {
                   name="nombre" 
                   value={formData.nombre || ''} 
                   onChange={handleInputChange} 
-                  placeholder="Ej. A-201" 
+                  placeholder="Ej. 201" 
                 />
               </div>
               <div className="form-group-modal">
@@ -104,7 +108,9 @@ const GestorAulas = () => {
                   name="edificio" 
                   value={formData.edificio || ''} 
                   onChange={handleInputChange} 
-                  placeholder="Ej. Edificio B" 
+                  placeholder="Ej. A" 
+                  maxLength="1"
+                  style={{ textTransform: 'uppercase' }}
                 />
               </div>
             </div>

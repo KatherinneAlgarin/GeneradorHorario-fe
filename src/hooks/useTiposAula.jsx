@@ -31,6 +31,11 @@ export const useTiposAula = () => {
       setTipos(data);
     } catch (error) {
       console.error("Error al cargar tipos de aula:", error);
+      setNotification({
+        show: true,
+        message: "Error de conexión al cargar los tipos de aula.",
+        type: 'error'
+      });
     } finally {
       setLoading(false);
     }
@@ -128,6 +133,7 @@ export const useTiposAula = () => {
   };
 
   const openAddModal = () => {
+    setNotificationModal({ show: false, message: '', type: 'error' });
     setModalState({ 
       isOpen: true, 
       type: 'add', 
@@ -136,10 +142,14 @@ export const useTiposAula = () => {
   };
 
   const openEditModal = (item) => {
+    setNotificationModal({ show: false, message: '', type: 'error' });
     setModalState({ isOpen: true, type: 'edit', data: { ...item } });
   };
 
-  const closeModal = () => setModalState(prev => ({ ...prev, isOpen: false }));
+  const closeModal = () => {
+    setNotificationModal({ show: false, message: '', type: 'error' });
+    setModalState(prev => ({ ...prev, isOpen: false }));
+  };
 
   return {
     tipos: filteredTipos,

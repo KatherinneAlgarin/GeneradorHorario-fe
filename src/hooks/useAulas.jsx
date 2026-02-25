@@ -32,6 +32,11 @@ export const useAulas = () => {
       setAulas(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error al cargar aulas:", error);
+      setNotification({
+        show: true,
+        message: "Error de conexión al cargar las aulas.",
+        type: 'error'
+      });
     } finally {
       setLoading(false);
     }
@@ -59,7 +64,6 @@ export const useAulas = () => {
     }));
   };
 
-
   const toggleStatus = useCallback(async (id, currentStatus) => {
     if (!currentStatus) return;
 
@@ -84,7 +88,6 @@ export const useAulas = () => {
       }
     }
   }, [fetchAulas]);
-
 
   const columns = useMemo(() => [
     { header: 'Aula', accessor: 'nombre' },
@@ -132,9 +135,19 @@ export const useAulas = () => {
       return;
     }
 
+    const regexLetra = /^[a-zA-Z]$/;
+    if (!regexLetra.test(formData.edificio.trim())) {
+      setNotificationModal({
+        show: true,
+        message: "El edificio debe ser exactamente una letra del abecedario (Ej: A, B, C).",
+        type: 'error'
+      });
+      return;
+    }
+
     const dataToSave = {
       nombre: formData.nombre,
-      edificio: formData.edificio,
+      edificio: formData.edificio.trim().toUpperCase(),
       ubicacion: formData.ubicacion,
       capacidad: parseInt(formData.capacidad),
       id_tipo_aula: formData.id_tipo_aula
@@ -159,19 +172,20 @@ export const useAulas = () => {
       });
       await fetchAulas();
       setTimeout(() => closeModal(), 1500);
-      } catch (error) {
-        if (error.statusCode >= 500) {
-          console.error("Error al guardar aula:", error);
-        }
-        setNotificationModal({
-          show: true,
-          message: error.message || "Error al procesar la solicitud",
-          type: 'error'
-        });
+    } catch (error) {
+      if (error.statusCode >= 500) {
+        console.error("Error al guardar aula:", error);
       }
+      setNotificationModal({
+        show: true,
+        message: error.message || "Error al procesar la solicitud",
+        type: 'error'
+      });
+    }
   };
 
   const openAddModal = () => {
+    setNotificationModal({ show: false, message: '', type: 'error' });
     setModalState({ 
       isOpen: true, 
       type: 'add', 
@@ -180,6 +194,7 @@ export const useAulas = () => {
   };
 
   const openEditModal = (item) => {
+    setNotificationModal({ show: false, message: '', type: 'error' });
     setModalState({ 
       isOpen: true, 
       type: 'edit', 
@@ -187,7 +202,10 @@ export const useAulas = () => {
     });
   };
 
-  const closeModal = () => setModalState(prev => ({ ...prev, isOpen: false }));
+  const closeModal = () => {
+    setNotificationModal({ show: false, message: '', type: 'error' });
+    setModalState(prev => ({ ...prev, isOpen: false }));
+  };
 
   return {
     aulas: filteredAulas, 
