@@ -7,29 +7,41 @@ export const getUserRole = async () => {
 
   const userId = user.id;
 
-  // 1️⃣ Buscar en docente
+  // Buscar en docente
   const { data: docente } = await supabase
     .from("docente")
-    .select("id_docente")
+    .select("id_docente, activo")
     .eq("id_auth_user", userId)
     .maybeSingle();
 
   if (docente) {
-    return { rol: "docente" };
+    return { 
+      rol: "docente", 
+      activo: docente.activo,
+      id: docente.id_docente
+    };
   }
 
-  // 2️⃣ Buscar en administrador
+  // Buscar en administrador
   const { data: admin } = await supabase
     .from("administrador")
-    .select("id_facultad")
+    .select("id_administrador, id_facultad, activo")
     .eq("id_auth_user", userId)
     .maybeSingle();
 
   if (admin) {
     if (admin.id_facultad === null) {
-      return { rol: "admin_general" };
+      return { 
+        rol: "admin_general", 
+        activo: admin.activo,
+        id: admin.id_administrador
+      };
     } else {
-      return { rol: "decano" };
+      return { 
+        rol: "decano", 
+        activo: admin.activo,
+        id: admin.id_administrador
+      };
     }
   }
 

@@ -47,6 +47,14 @@ export default function Login() {
     if (!userRole) {
       setIsLoading(false);
       setError("El usuario no está asociado a ningún rol.");
+      await supabase.auth.signOut();
+      return;
+    }
+
+    if (!userRole.activo) {
+      setIsLoading(false);
+      setError("El usuario se encuentra inactivo. Contacte al administrador.");
+      await supabase.auth.signOut();
       return;
     }
 
