@@ -4,18 +4,21 @@ import { apiRequest } from '../services/api';
 export const useCarreras = () => {
   const [carreras, setCarreras] = useState([]);
   const [facultades, setFacultades] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterFacultad, setFilterFacultad] = useState(""); 
+  const [filterEstado, setFilterEstado] = useState("");
   
+  const [notificationModal, setNotificationModal] = useState({
+    show: false, message: '', type: 'error'
+  });
+
   const [notification, setNotification] = useState({
-    show: false,
-    message: '',
-    type: 'error'
+    show: false, message: '', type: 'error'
   });
   
   const [modalState, setModalState] = useState({
-    isOpen: false,
-    type: 'add',
+    isOpen: false, type: 'add',
     data: { codigo: '', nombre: '', descripcion: '', id_facultad: '', activo: true }
   });
 
@@ -26,11 +29,11 @@ export const useCarreras = () => {
         apiRequest('/carreras'),
         apiRequest('/facultades')
       ]);
-      
       setCarreras(Array.isArray(carrerasData) ? carrerasData : []);
       setFacultades(Array.isArray(facultadesData) ? facultadesData : []);
     } catch (error) {
       console.error("Error al cargar datos:", error);
+      setNotification({ show: true, message: "Error al cargar las carreras y facultades.", type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -41,44 +44,46 @@ export const useCarreras = () => {
   }, [fetchData]);
 
   const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    const val = type === 'checkbox' ? checked : value;
+    const { name, value } = e.target;
     setModalState(prev => ({
       ...prev,
-      data: { ...prev.data, [name]: val }
+      data: { ...prev.data, [name]: value }
     }));
   };
 
+  const toggleStatus = useCallback((id, currentStatus, nombre) => {
+    setNotificationModal({ show: false, message: '', type: 'error' });
+    setModalState({
+      isOpen: true,
+      type: 'confirmToggle',
+      data: { id_carrera: id, activo: currentStatus, nombre: nombre }
+    });
+  }, []);
 
-  const toggleStatus = useCallback(async (id, currentStatus) => {
-    if (!currentStatus) return;
+  const executeToggleStatus = async () => {
+    const { id_carrera, activo } = modalState.data;
+    const endpoint = activo ? `/carreras/desactivar/${id_carrera}` : `/carreras/activar/${id_carrera}`;
 
-    if (window.confirm("¿Confirma dar de baja esta carrera?")) {
-      try {
-        await apiRequest(`/carreras/desactivar/${id}`, { method: 'PUT' });
-        await fetchData();
-        setNotification({
-          show: true,
-          message: "Carrera dada de baja exitosamente",
-          type: 'success'
-        });
-      } catch (error) {
-        setNotification({
-          show: true,
-          message: error.message,
-          type: 'error'
-        });
-      }
+    try {
+      await apiRequest(endpoint, { method: 'PUT' });
+      await fetchData();
+      setNotification({
+        show: true,
+        message: activo ? "Carrera dada de baja exitosamente" : "Carrera reactivada exitosamente",
+        type: 'success'
+      });
+      closeModal();
+    } catch (error) {
+      console.error("Error al cambiar estado:", error);
+      setNotificationModal({
+        show: true, message: error.message || "Error al cambiar el estado", type: 'error'
+      });
     }
-  }, [fetchData]);
+  };
 
   const handleSaveCarrera = async (formData) => {
     if (!formData.codigo || !formData.nombre || !formData.id_facultad) {
-      setNotification({
-        show: true,
-        message: "Facultad, nombre y código son obligatorios.",
-        type: 'error'
-      });
+      setNotificationModal({ show: true, message: "Facultad, nombre y código son obligatorios.", type: 'error' });
       return;
     }
 
@@ -91,34 +96,17 @@ export const useCarreras = () => {
       };
 
       if (modalState.type === 'add') {
-        await apiRequest('/carreras', {
-          method: 'POST',
-          body: JSON.stringify(payload)
-        });
-        setNotification({
-          show: true,
-          message: "Carrera creada exitosamente",
-          type: 'success'
-        });
+        await apiRequest('/carreras', { method: 'POST', body: JSON.stringify(payload) });
+        setNotificationModal({ show: true, message: "Carrera creada exitosamente", type: 'success' });
       } else {
-        await apiRequest(`/carreras/actualizar/${formData.id_carrera}`, {
-          method: 'PUT',
-          body: JSON.stringify(payload)
-        });
-        setNotification({
-          show: true,
-          message: "Carrera actualizada exitosamente",
-          type: 'success'
-        });
+        await apiRequest(`/carreras/actualizar/${formData.id_carrera}`, { method: 'PUT', body: JSON.stringify(payload) });
+        setNotificationModal({ show: true, message: "Carrera actualizada exitosamente", type: 'success' });
       }
       await fetchData();
-      closeModal();
+      setTimeout(() => closeModal(), 1500);
     } catch (error) {
-      setNotification({
-        show: true,
-        message: error.message,
-        type: 'error'
-      });
+      console.error("Error al guardar carrera:", error);
+      setNotificationModal({ show: true, message: error.message || "Error al procesar la solicitud", type: 'error' });
     }
   };
 
@@ -145,8 +133,8 @@ export const useCarreras = () => {
       render: (row) => (
         <span 
           className={`status-badge ${row.activo ? 'status-active' : 'status-inactive'} cursor-pointer`}
-          onClick={() => toggleStatus(row.id_carrera, row.activo)}
-          title={row.activo ? "Clic para dar de baja" : "Inactiva"}
+          onClick={() => toggleStatus(row.id_carrera, row.activo, row.nombre)}
+          title={row.activo ? "Clic para dar de baja" : "Clic para reactivar"}
         >
           {row.activo ? 'Activo' : 'Inactivo'}
         </span>
@@ -154,16 +142,29 @@ export const useCarreras = () => {
     }
   ], [toggleStatus]);
 
+ 
   const filteredCarreras = useMemo(() => {
-    const lower = searchTerm.toLowerCase();
-    return carreras.filter(c => 
-      c.nombre?.toLowerCase().includes(lower) || 
-      c.codigo?.toLowerCase().includes(lower) ||
-      c.facultad?.nombre?.toLowerCase().includes(lower)
-    );
-  }, [carreras, searchTerm]);
+    return carreras.filter(c => {
+      // 1. Filtro por  nombre o código
+      const lower = searchTerm.toLowerCase();
+      const matchesSearch = !searchTerm || 
+        c.nombre?.toLowerCase().includes(lower) || 
+        c.codigo?.toLowerCase().includes(lower);
+
+      // filtro por facultad
+      const matchesFacultad = !filterFacultad || c.id_facultad === filterFacultad;
+
+      // filtro estado
+      let matchesEstado = true;
+      if (filterEstado === "activos") matchesEstado = c.activo === true;
+      if (filterEstado === "inactivos") matchesEstado = c.activo === false;
+
+      return matchesSearch && matchesFacultad && matchesEstado;
+    });
+  }, [carreras, searchTerm, filterFacultad, filterEstado]);
 
   const openAddModal = () => {
+    setNotificationModal({ show: false, message: '', type: 'error' });
     setModalState({ 
       isOpen: true, type: 'add', 
       data: { codigo: '', nombre: '', descripcion: '', id_facultad: '', activo: true } 
@@ -171,22 +172,24 @@ export const useCarreras = () => {
   };
 
   const openEditModal = (item) => {
+    setNotificationModal({ show: false, message: '', type: 'error' });
     setModalState({ isOpen: true, type: 'edit', data: { ...item } });
   };
 
-  const closeModal = () => setModalState(prev => ({ ...prev, isOpen: false }));
+  const closeModal = () => {
+    setNotificationModal({ show: false, message: '', type: 'error' });
+    setModalState(prev => ({ ...prev, isOpen: false }));
+  };
 
   return {
-    carreras: filteredCarreras,
-    facultades,
-    columns,
+    carreras: filteredCarreras, facultades, columns,
     searchTerm, setSearchTerm,
-    modalState,
-    openAddModal, openEditModal, closeModal,
-    handleSaveCarrera,
-    handleInputChange,
-    loading,
-    notification,
-    setNotification
+    filterFacultad, setFilterFacultad, 
+    filterEstado, setFilterEstado,
+    modalState, openAddModal, openEditModal, closeModal,
+    handleSaveCarrera, handleInputChange, loading,
+    executeToggleStatus,
+    notification, setNotification,
+    notificationModal, setNotificationModal
   };
 };

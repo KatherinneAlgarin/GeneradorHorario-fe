@@ -5,6 +5,9 @@ export const useCiclos = () => {
   const [ciclos, setCiclos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterEstado, setFilterEstado] = useState("");
+  const [filterYearFrom, setFilterYearFrom] = useState("");
+  const [filterYearTo, setFilterYearTo] = useState("");
 
   const [modalState, setModalState] = useState({
     isOpen: false,
@@ -13,24 +16,21 @@ export const useCiclos = () => {
   });
 
   const [notificationModal, setNotificationModal] = useState({
-    show: false,
-    message: '',
-    type: 'error'
+    show: false, message: '', type: 'error'
   });
 
   const [notification, setNotification] = useState({
-    show: false,
-    message: '',
-    type: 'error'
+    show: false, message: '', type: 'error'
   });
 
   const fetchCiclos = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await apiRequest('/ciclos'); // Asegúrate que esta ruta coincida con tu backend
+      const data = await apiRequest('/ciclos'); 
       setCiclos(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error al cargar ciclos:", error);
+      setNotification({ show: true, message: "Error de conexión al cargar ciclos.", type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -49,40 +49,24 @@ export const useCiclos = () => {
   };
 
   const handleSaveCiclo = async (formData) => {
-    // Validar que los campos no estén vacíos
     if (!formData.nombre || !formData.fecha_inicio || !formData.fecha_fin) {
-      setNotificationModal({
-        show: true,
-        message: "Nombre, fecha de inicio y fecha de fin son obligatorios",
-        type: 'error'
-      });
+      setNotificationModal({ show: true, message: "Nombre, fecha de inicio y fecha de fin son obligatorios", type: 'error' });
       return;
     }
 
-    // Validar que fecha_inicio < fecha_fin
     const fechaInicio = new Date(formData.fecha_inicio);
     const fechaFin = new Date(formData.fecha_fin);
     
     if (fechaInicio >= fechaFin) {
-      setNotificationModal({
-        show: true,
-        message: "La fecha de inicio debe ser anterior a la fecha de fin",
-        type: 'error'
-      });
+      setNotificationModal({ show: true, message: "La fecha de inicio debe ser anterior a la fecha de fin", type: 'error' });
       return;
     }
 
     try {
       if (modalState.type === 'add') {
-        await apiRequest('/ciclos', {
-          method: 'POST',
-          body: JSON.stringify(formData)
-        });
+        await apiRequest('/ciclos', { method: 'POST', body: JSON.stringify(formData) });
       } else {
-        await apiRequest(`/ciclos/actualizar/${formData.id_ciclo_academico}`, {
-          method: 'PUT',
-          body: JSON.stringify(formData)
-        });
+        await apiRequest(`/ciclos/actualizar/${formData.id_ciclo_academico}`, { method: 'PUT', body: JSON.stringify(formData) });
       }
       setNotificationModal({
         show: true,
@@ -92,37 +76,30 @@ export const useCiclos = () => {
       await fetchCiclos();
       setTimeout(() => closeModal(), 1500);
     } catch (error) {
-      if (error.statusCode >= 500) {
-        console.error("Error al guardar ciclo:", error);
-      }
-      setNotificationModal({
-        show: true,
-        message: error.message || "Error al guardar el ciclo",
-        type: 'error'
-      });
+      console.error("Error al guardar ciclo:", error);
+      setNotificationModal({ show: true, message: error.message || "Error al guardar el ciclo", type: 'error' });
     }
   };
 
-  const handleActivarCiclo = async (id) => {
-    if (window.confirm("¿Deseas establecer este ciclo como el único activo del sistema?")) {
-      try {
-        await apiRequest(`/ciclos/activar/${id}`, { method: 'PUT' });
-        setNotification({
-          show: true,
-          message: 'Ciclo activado correctamente',
-          type: 'success'
-        });
-        await fetchCiclos();
-      } catch (error) {
-        if (error.statusCode >= 500) {
-          console.error("Error al activar ciclo:", error);
-        }
-        setNotification({
-          show: true,
-          message: error.message || "Error al activar el ciclo",
-          type: 'error'
-        });
-      }
+  const promptActivarCiclo = (id, nombre) => {
+    setNotificationModal({ show: false, message: '', type: 'error' });
+    setModalState({
+      isOpen: true,
+      type: 'confirmActivate',
+      data: { id_ciclo_academico: id, nombre: nombre }
+    });
+  };
+
+  const executeActivarCiclo = async () => {
+    const { id_ciclo_academico } = modalState.data;
+    try {
+      await apiRequest(`/ciclos/activar/${id_ciclo_academico}`, { method: 'PUT' });
+      setNotification({ show: true, message: 'Ciclo activado correctamente', type: 'success' });
+      await fetchCiclos();
+      closeModal();
+    } catch (error) {
+      console.error("Error al activar ciclo:", error);
+      setNotificationModal({ show: true, message: error.message || "Error al activar el ciclo", type: 'error' });
     }
   };
 
@@ -149,11 +126,29 @@ export const useCiclos = () => {
     }
   ], []);
 
+
   const filteredCiclos = useMemo(() => {
-    return ciclos.filter(c => 
-      c.nombre.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [ciclos, searchTerm]);
+    return ciclos.filter(c => {
+      
+      const matchesSearch = !searchTerm || c.nombre.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      
+      let matchesEstado = true;
+      if (filterEstado === "activos") matchesEstado = c.activo === true;
+      if (filterEstado === "inactivos") matchesEstado = c.activo === false;
+
+      
+      let matchesYear = true;
+      const startYear = new Date(c.fecha_inicio).getFullYear();
+      if (startYear) {
+        const from = filterYearFrom ? parseInt(filterYearFrom) : 0;
+        const to = filterYearTo ? parseInt(filterYearTo) : 9999;
+        matchesYear = startYear >= from && startYear <= to;
+      }
+
+      return matchesSearch && matchesEstado && matchesYear;
+    });
+  }, [ciclos, searchTerm, filterEstado, filterYearFrom, filterYearTo]);
 
   const openAddModal = () => setModalState({ 
     isOpen: true, type: 'add', data: { nombre: '', fecha_inicio: '', fecha_fin: '' } 
@@ -168,16 +163,21 @@ export const useCiclos = () => {
     setModalState({ isOpen: true, type: 'edit', data: formattedItem });
   };
 
-  const closeModal = () => setModalState(prev => ({ ...prev, isOpen: false }));
+  const closeModal = () => {
+    setNotificationModal({ show: false, message: '', type: 'error' });
+    setModalState(prev => ({ ...prev, isOpen: false }));
+  };
 
   return {
-    ciclos: filteredCiclos,
-    columns,
+    ciclos: filteredCiclos, columns,
     searchTerm, setSearchTerm,
-    modalState,
-    loading,
+    filterEstado, setFilterEstado,
+    filterYearFrom, setFilterYearFrom,
+    filterYearTo, setFilterYearTo,
+    modalState, loading,
     openAddModal, openEditModal, closeModal,
-    handleSaveCiclo, handleInputChange, handleActivarCiclo,
+    handleSaveCiclo, handleInputChange, 
+    promptActivarCiclo, executeActivarCiclo,
     notificationModal, setNotificationModal,
     notification, setNotification
   };

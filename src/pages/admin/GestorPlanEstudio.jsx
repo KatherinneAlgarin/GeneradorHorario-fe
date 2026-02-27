@@ -1,6 +1,8 @@
 import React from 'react';
 import Table from '../../components/common/Table';
 import SearchBar from '../../components/common/SearchBar';
+import Filtro from '../../components/common/Filtro';
+import FiltroYear from '../../components/common/FiltroYear';
 import ModalGeneral from '../../components/common/ModalGeneral';
 import Notification from '../../components/common/Notification';
 import { usePlanEstudio } from '../../hooks/usePlanEstudio';
@@ -8,29 +10,19 @@ import '../../styles/AdminDashboard.css';
 
 const GestorPlanes = () => {
   const {
-    planes,
-    carreras,
-    columns,
+    planes, carreras, columns,
     searchTerm, setSearchTerm,
+    filterEstado, setFilterEstado,
+    filterYearFrom, setFilterYearFrom,
+    filterYearTo, setFilterYearTo,
     modalState, loading,
     openAddModal, openEditModal, closeModal,
-    handleSavePlan, handleInputChange,
+    handleSavePlan, handleInputChange, executeToggleStatus,
     notification, setNotification,
     notificationModal, setNotificationModal
   } = usePlanEstudio();
 
-  const [formData, setFormData] = React.useState(null);
-
-  React.useEffect(() => {
-    if (modalState.isOpen) {
-      setFormData(modalState.data);
-    }
-  }, [modalState]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  const formData = modalState.data;
 
   const renderActions = (row) => (
     <div className="action-buttons">
@@ -51,11 +43,26 @@ const GestorPlanes = () => {
         <button className="btn-primary" onClick={openAddModal}>+ Nuevo Plan</button>
       </div>
 
-      <div className="filters-bar">
+      <div className="filters-bar" style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
         <SearchBar
           value={searchTerm}
           onChange={setSearchTerm}
-          placeholder="Buscar por nombre, año o carrera..."
+          placeholder="Buscar plan o carrera..."
+        />
+        <Filtro 
+          value={filterEstado} 
+          onChange={setFilterEstado} 
+          defaultLabel="Todos los estados"
+          options={[
+            { label: 'Vigentes', value: 'activos' },
+            { label: 'Inactivos', value: 'inactivos' }
+          ]} 
+        />
+        <FiltroYear 
+          fromYear={filterYearFrom}
+          toYear={filterYearTo}
+          onFromChange={setFilterYearFrom}
+          onToChange={setFilterYearTo}
         />
       </div>
 
@@ -77,15 +84,32 @@ const GestorPlanes = () => {
       <ModalGeneral
         isOpen={modalState.isOpen}
         onClose={closeModal}
-        title={modalState.type === 'add' ? 'Registrar Plan de Estudio' : 'Editar Plan'}
+        title={
+          modalState.type === 'add' ? 'Registrar Plan de Estudio' : 
+          modalState.type === 'edit' ? 'Editar Plan' : 
+          'Confirmar Acción'
+        }
         footer={
-          <>
-            <button className="btn-cancel" onClick={closeModal}>Cancelar</button>
-            <button className="btn-save" onClick={() => handleSavePlan(formData)}>Guardar</button>
-          </>
+          modalState.type === 'confirmToggle' ? (
+            <>
+              <button className="btn-cancel" onClick={closeModal}>Cancelar</button>
+              <button 
+                className="btn-save" 
+                style={{ backgroundColor: '#da2525' }} 
+                onClick={executeToggleStatus}
+              >
+                Confirmar
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="btn-cancel" onClick={closeModal}>Cancelar</button>
+              <button className="btn-save" onClick={() => handleSavePlan(formData)}>Guardar</button>
+            </>
+          )
         }
       >
-        {modalState.isOpen && notificationModal.show && (
+        {notificationModal.show && modalState.isOpen && (
           <Notification 
             show={notificationModal.show}
             message={notificationModal.message}
@@ -93,83 +117,95 @@ const GestorPlanes = () => {
             onClose={() => setNotificationModal({ ...notificationModal, show: false })}
           />
         )}
-        {formData && (
-          <>
-            <div className="form-row">
-              <div className="form-group-modal full-width">
-                <label>Carrera Asociada</label>
-                 <select
-                   name="id_carrera"
-                   value={formData.id_carrera || ''}
-                   onChange={handleChange}
-                   className="form-select"
-                 >
-                  <option value="">-- Seleccione una Carrera --</option>
-                  {carreras.length > 0 ? (
-                    carreras.map(car => (
-                      <option key={car.id_carrera} value={car.id_carrera}>
-                        {car.nombre}
-                      </option>
-                    ))
-                  ) : (
-                    <option disabled>No hay carreras activas disponibles</option>
-                  )}
-                </select>
+        
+        {modalState.type === 'confirmToggle' ? (
+          <div style={{ padding: '20px 0', textAlign: 'center', fontSize: '1.1rem' }}>
+            <p>
+              ¿Estás seguro de que deseas <strong>{formData?.vigente ? 'dar de baja' : 'reactivar'}</strong> el plan <strong>{formData?.nombre}</strong>?
+            </p>
+          </div>
+        ) : (
+          formData && (
+            <>
+              <div className="form-row">
+                <div className="form-group-modal full-width">
+                  <label>Carrera Asociada</label>
+                  <select
+                    name="id_carrera"
+                    value={formData.id_carrera || ''}
+                    onChange={handleInputChange}
+                    className="form-select"
+                  >
+                    <option value="">-- Seleccione una Carrera --</option>
+                    
+                    {carreras.length > 0 ? (
+                      carreras
+                        .filter(car => car.activo || car.id_carrera === formData.id_carrera)
+                        .map(car => (
+                          <option key={car.id_carrera} value={car.id_carrera}>
+                            {car.nombre} {!car.activo ? '(Inactiva)' : ''}
+                          </option>
+                      ))
+                    ) : (
+                      <option disabled>No hay carreras disponibles</option>
+                    )}
+                  </select>
+                </div>
               </div>
-            </div>
 
-            <div className="form-row">
-              <div className="form-group-modal full-width">
-                <label>Nombre del Plan</label>
-                 <input
-                   name="nombre"
-                   value={formData.nombre || ''}
-                   onChange={handleChange}
-                   placeholder="Ej. Plan de Formación 2024"
-                 />
+              <div className="form-row">
+                <div className="form-group-modal full-width">
+                  <label>Nombre del Plan</label>
+                  <input
+                    name="nombre"
+                    value={formData.nombre || ''}
+                    onChange={handleInputChange}
+                    placeholder="Ej. Plan de Formación 2024"
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="form-row">
-              <div className="form-group-modal full-width">
-                <label>Descripción (Opcional)</label>
-                 <textarea
-                   name="descripcion"
-                   className="form-textarea"
-                   value={formData.descripcion || ''}
-                   onChange={handleChange}
-                   placeholder="Breve descripción del plan..."
-                 />
+              <div className="form-row">
+                <div className="form-group-modal full-width">
+                  <label>Descripción (Opcional)</label>
+                  <textarea
+                    name="descripcion"
+                    className="form-textarea"
+                    value={formData.descripcion || ''}
+                    onChange={handleInputChange}
+                    placeholder="Breve descripción del plan..."
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="form-row">
-              <div className="form-group-modal">
-                <label>Año de Inicio</label>
-                 <input
-                   type="number"
-                   name="fecha_inicio"
-                   value={formData.fecha_inicio || ''}
-                   onChange={handleChange}
-                   placeholder="Ej. 2024"
-                   min="2000"
-                   max="2100"
-                 />
+              <div className="form-row">
+                <div className="form-group-modal">
+                  <label>Año de Inicio</label>
+                  <input
+                    type="number"
+                    name="fecha_inicio"
+                    value={formData.fecha_inicio || ''}
+                    onChange={handleInputChange}
+                    placeholder="Ej. 2024"
+                    min="1990"
+                    onKeyDown={(e) => ['e', 'E', '+', '-', '.', ','].includes(e.key) && e.preventDefault()}
+                  />
+                </div>
+                <div className="form-group-modal">
+                  <label>Año de Fin</label>
+                  <input
+                    type="number"
+                    name="fecha_fin"
+                    value={formData.fecha_fin || ''}
+                    onChange={handleInputChange}
+                    placeholder="Ej. 2029"
+                    min="1990"
+                    onKeyDown={(e) => ['e', 'E', '+', '-', '.', ','].includes(e.key) && e.preventDefault()}
+                  />
+                </div>
               </div>
-              <div className="form-group-modal">
-                <label>Año de Fin</label>
-                 <input
-                   type="number"
-                   name="fecha_fin"
-                   value={formData.fecha_fin || ''}
-                   onChange={handleChange}
-                   placeholder="Ej. 2029"
-                   min="2000"
-                   max="2100"
-                 />
-              </div>
-            </div>
-          </>
+            </>
+          )
         )}
       </ModalGeneral>
     </div>

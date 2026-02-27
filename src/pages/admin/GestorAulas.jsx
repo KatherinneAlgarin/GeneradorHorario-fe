@@ -1,6 +1,7 @@
 import React from 'react';
 import Table from '../../components/common/Table';
 import SearchBar from '../../components/common/SearchBar';
+import Filtro from '../../components/common/Filtro';
 import ModalGeneral from '../../components/common/ModalGeneral';
 import Notification from '../../components/common/Notification';
 import { useAulas } from '../../hooks/useAulas';
@@ -8,18 +9,16 @@ import '../../styles/AdminDashboard.css';
 
 const GestorAulas = () => {
   const { 
-    aulas, 
-    tipos, 
-    columns, 
+    aulas, tipos, columns, 
     searchTerm, setSearchTerm, 
-    modalState, 
-    openAddModal, openEditModal, closeModal, 
-    handleSaveAula,
-    handleInputChange,
-    loading,
-    executeToggleStatus,
-    notificationModal, setNotificationModal,
-    notification, setNotification
+    filterEstado, setFilterEstado,
+    filterTipo, setFilterTipo,
+    filterUbicacion, setFilterUbicacion,
+    filterEdificio, setFilterEdificio,
+    opcionesEdificios,
+    modalState, openAddModal, openEditModal, closeModal, 
+    handleSaveAula, handleInputChange, loading, executeToggleStatus,
+    notificationModal, setNotificationModal, notification, setNotification
   } = useAulas();
 
   const formData = modalState.data;
@@ -36,6 +35,11 @@ const GestorAulas = () => {
     </div>
   );
 
+  const opcionesTiposAula = tipos.map(t => ({
+    label: t.nombre,
+    value: t.id_tipo_aula
+  }));
+
   return (
     <div className="tab-view-container">
       <div className="page-header">
@@ -43,11 +47,42 @@ const GestorAulas = () => {
         <button className="btn-primary" onClick={openAddModal}>+ Nueva Aula</button>
       </div>
 
-      <div className="filters-bar">
+      {/* Contenedor de Filtros Avanzados */}
+      <div className="filters-bar" style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
         <SearchBar 
           value={searchTerm} 
           onChange={setSearchTerm} 
-          placeholder="Buscar por nombre, edificio o tipo..." 
+          placeholder="Buscar por nombre o capacidad..." 
+        />
+        <Filtro 
+          value={filterEdificio} 
+          onChange={setFilterEdificio} 
+          defaultLabel="Todos los Edificios"
+          options={opcionesEdificios} 
+        />
+        <Filtro 
+          value={filterUbicacion} 
+          onChange={setFilterUbicacion} 
+          defaultLabel="Todas las Ubicaciones"
+          options={[
+            { label: 'Campus', value: 'Campus' },
+            { label: 'Fuera de Campus', value: 'Fuera de Campus' }
+          ]} 
+        />
+        <Filtro 
+          value={filterTipo} 
+          onChange={setFilterTipo} 
+          defaultLabel="Todos los Tipos"
+          options={opcionesTiposAula} 
+        />
+        <Filtro 
+          value={filterEstado} 
+          onChange={setFilterEstado} 
+          defaultLabel="Todos los Estados"
+          options={[
+            { label: 'Activas', value: 'activos' },
+            { label: 'Inactivas', value: 'inactivos' }
+          ]} 
         />
       </div>
 
@@ -107,7 +142,6 @@ const GestorAulas = () => {
           />
         )}
         
-        {/* Si el modal es de confirmación, mostramos el texto. Si no, mostramos el formulario */}
         {modalState.type === 'confirmToggle' ? (
           <div style={{ padding: '20px 0', textAlign: 'center', fontSize: '1.1rem' }}>
             <p>
@@ -160,7 +194,9 @@ const GestorAulas = () => {
                     name="capacidad" 
                     value={formData.capacidad || ''} 
                     onChange={handleInputChange} 
-                    min="1" 
+                    min="1"
+                    placeholder="Ej. 35"
+                    onKeyDown={(e) => ['e', 'E', '+', '-', '.'].includes(e.key) && e.preventDefault()}
                   />
                 </div>
               </div>

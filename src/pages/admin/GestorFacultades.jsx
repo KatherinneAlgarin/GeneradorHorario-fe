@@ -1,6 +1,7 @@
 import React from 'react';
 import Table from '../../components/common/Table';
 import SearchBar from '../../components/common/SearchBar';
+import Filtro from '../../components/common/Filtro';
 import ModalGeneral from '../../components/common/ModalGeneral';
 import Notification from '../../components/common/Notification';
 import { useFacultades } from '../../hooks/useFacultades';
@@ -8,9 +9,12 @@ import '../../styles/AdminDashboard.css';
 
 const GestorFacultades = () => {
   const { 
-    facultades, columns, searchTerm, setSearchTerm, 
+    facultades, columns, 
+    searchTerm, setSearchTerm, 
+    filterEstado, setFilterEstado, 
     modalState, openAddModal, openEditModal, closeModal, 
     handleSaveFacultad, handleInputChange, loading,
+    executeToggleStatus,
     notification, setNotification,
     notificationModal, setNotificationModal
   } = useFacultades();
@@ -36,11 +40,20 @@ const GestorFacultades = () => {
         <button className="btn-primary" onClick={openAddModal}>+ Nueva Facultad</button>
       </div>
 
-      <div className="filters-bar">
+      <div className="filters-bar" style={{ display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
         <SearchBar 
           value={searchTerm} 
           onChange={setSearchTerm} 
-          placeholder="Buscar facultad..." 
+          placeholder="Buscar facultad por nombre..." 
+        />
+        <Filtro 
+          value={filterEstado} 
+          onChange={setFilterEstado} 
+          defaultLabel="Todos los estados"
+          options={[
+            { label: 'Activas', value: 'activos' },
+            { label: 'Inactivas', value: 'inactivos' }
+          ]} 
         />
       </div>
 
@@ -54,7 +67,7 @@ const GestorFacultades = () => {
       )}
 
       {loading ? (
-        <p>Cargando facultades...</p>
+        <div className="loading-container">Cargando facultades...</div>
       ) : (
         <Table columns={columns} data={facultades} actions={renderActions} />
       )}
@@ -62,15 +75,33 @@ const GestorFacultades = () => {
       <ModalGeneral
         isOpen={modalState.isOpen}
         onClose={closeModal}
-        title={modalState.type === 'add' ? 'Registrar Facultad' : 'Editar Facultad'}
+        // Título dinámico
+        title={
+          modalState.type === 'add' ? 'Registrar Facultad' : 
+          modalState.type === 'edit' ? 'Editar Facultad' : 
+          'Confirmar Acción'
+        }
         footer={
-          <>
-            <button className="btn-cancel" onClick={closeModal}>Cancelar</button>
-            <button className="btn-save" onClick={() => handleSaveFacultad(formData)}>Guardar</button>
-          </>
+          modalState.type === 'confirmToggle' ? (
+            <>
+              <button className="btn-cancel" onClick={closeModal}>Cancelar</button>
+              <button 
+                className="btn-save" 
+                style={{ backgroundColor: '#da2525' }} 
+                onClick={executeToggleStatus}
+              >
+                Confirmar
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="btn-cancel" onClick={closeModal}>Cancelar</button>
+              <button className="btn-save" onClick={() => handleSaveFacultad(formData)}>Guardar</button>
+            </>
+          )
         }
       >
-        {modalState.isOpen && notificationModal.show && (
+        {notificationModal.show && modalState.isOpen && (
           <Notification 
             show={notificationModal.show}
             message={notificationModal.message}
@@ -78,33 +109,42 @@ const GestorFacultades = () => {
             onClose={() => setNotificationModal({ ...notificationModal, show: false })}
           />
         )}
-        {formData && (
-          <>
-            <div className="form-row">
-              <div className="form-group-modal full-width">
-                <label>Nombre de Facultad</label>
-                <input 
-                  name="nombre"
-                  value={formData.nombre || ''} 
-                  onChange={handleInputChange} 
-                  placeholder="Ej. Facultad de Ingeniería" 
-                />
+        
+        {modalState.type === 'confirmToggle' ? (
+          <div style={{ padding: '20px 0', textAlign: 'center', fontSize: '1.1rem' }}>
+            <p>
+              ¿Estás seguro de que deseas <strong>{formData?.activo ? 'dar de baja' : 'reactivar'}</strong> la facultad de <strong>{formData?.nombre}</strong>?
+            </p>
+          </div>
+        ) : (
+          formData && (
+            <>
+              <div className="form-row">
+                <div className="form-group-modal full-width">
+                  <label>Nombre de Facultad</label>
+                  <input 
+                    name="nombre"
+                    value={formData.nombre || ''} 
+                    onChange={handleInputChange} 
+                    placeholder="Ej. Facultad de Ingeniería y Arquitectura" 
+                  />
+                </div>
               </div>
-            </div>
-            
-            <div className="form-row">
-              <div className="form-group-modal full-width">
-                <label>Descripción</label>
-                <textarea 
-                  name="descripcion"
-                  className="form-textarea"
-                  value={formData.descripcion || ''} 
-                  onChange={handleInputChange} 
-                  placeholder="Breve descripción..."
-                />
+              
+              <div className="form-row">
+                <div className="form-group-modal full-width">
+                  <label>Descripción</label>
+                  <textarea 
+                    name="descripcion"
+                    className="form-textarea"
+                    value={formData.descripcion || ''} 
+                    onChange={handleInputChange} 
+                    placeholder="Breve descripción..."
+                  />
+                </div>
               </div>
-            </div>
-          </>
+            </>
+          )
         )}
       </ModalGeneral>
     </div>

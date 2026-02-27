@@ -6,8 +6,10 @@ export const useMaterias = () => {
   const [tiposAula, setTiposAula] = useState([]);
   const [planes, setPlanes] = useState([]);
   const [ciclos, setCiclos] = useState([]); 
-  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterTipoAula, setFilterTipoAula] = useState("");
+  const [filterEstado, setFilterEstado] = useState("");
   
   const [modalState, setModalState] = useState({ 
     isOpen: false, 
@@ -60,52 +62,35 @@ export const useMaterias = () => {
     }));
   };
 
-  const toggleStatus = useCallback(async (id, currentStatus) => {
-    if (!currentStatus) return;
-    if (window.confirm("¿Confirma dar de baja esta asignatura?")) {
-      try {
-        await apiRequest(`/asignaturas/desactivar/${id}`, { method: 'PUT' });
-        setNotification({ show: true, message: 'Asignatura desactivada correctamente', type: 'success' });
-        await fetchData();
-      } catch (error) {
-        setNotification({ show: true, message: error.message || 'Error al desactivar la asignatura', type: 'error' });
-      }
-    }
-  }, [fetchData]);
+  const toggleStatus = useCallback((id, currentStatus, nombre) => {
+    setNotificationModal({ show: false, message: '', type: 'error' });
+    setModalState({
+      isOpen: true,
+      type: 'confirmToggle',
+      data: { id_asignatura: id, activo: currentStatus, nombre: nombre }
+    });
+  }, []);
 
-  const columns = useMemo(() => [
-    { header: 'Código', accessor: 'codigo' },
-    { header: 'Asignatura', accessor: 'nombre' },
-    { 
-      header: 'Req. Aula', 
-      accessor: 'requiere_tipo_aula',
-      render: (row) => row.tipo_aula?.nombre || '---'
-    },
-    { header: 'H. Teóricas', accessor: 'horas_teoricas' },
-    { header: 'H. Prácticas', accessor: 'horas_practicas' },
-    { 
-      header: 'Estado', 
-      accessor: 'activo',
-      render: (row) => (
-        <span 
-          className={`status-badge ${row.activo ? 'status-active' : 'status-inactive'} cursor-pointer`}
-          onClick={() => toggleStatus(row.id_asignatura, row.activo)}
-        >
-          {row.activo ? 'Activo' : 'Inactivo'}
-        </span>
-      )
-    }
-  ], [toggleStatus]);
+  const executeToggleStatus = async () => {
+    const { id_asignatura, activo } = modalState.data;
+    const endpoint = activo ? `/asignaturas/desactivar/${id_asignatura}` : `/asignaturas/activar/${id_asignatura}`;
 
-  const filteredMaterias = useMemo(() => {
-    if (!searchTerm) return materias;
-    const lower = searchTerm.toLowerCase();
-    return materias.filter(m => 
-      m.nombre?.toLowerCase().includes(lower) || 
-      m.codigo?.toLowerCase().includes(lower) ||
-      m.tipo_aula?.nombre?.toLowerCase().includes(lower)
-    );
-  }, [materias, searchTerm]);
+    try {
+      await apiRequest(endpoint, { method: 'PUT' });
+      await fetchData();
+      setNotification({
+        show: true,
+        message: activo ? "Asignatura dada de baja exitosamente" : "Asignatura reactivada exitosamente",
+        type: 'success'
+      });
+      closeModal();
+    } catch (error) {
+      console.error("Error al cambiar estado:", error);
+      setNotificationModal({
+        show: true, message: error.message || "Error al cambiar el estado", type: 'error'
+      });
+    }
+  };
 
   const handleSaveMateria = async (formData) => {
     if (!formData.nombre || !formData.codigo || !formData.id_plan_estudio || !formData.ciclo_recomendado) {
@@ -135,6 +120,51 @@ export const useMaterias = () => {
       setNotificationModal({ show: true, message: error.message || "Error al procesar la solicitud", type: 'error' });
     }
   };
+
+  const columns = useMemo(() => [
+    { header: 'Código', accessor: 'codigo' },
+    { header: 'Asignatura', accessor: 'nombre' },
+    { 
+      header: 'Req. Aula', 
+      accessor: 'requiere_tipo_aula',
+      render: (row) => row.tipo_aula?.nombre || '---'
+    },
+    { header: 'H. Teóricas', accessor: 'horas_teoricas' },
+    { header: 'H. Prácticas', accessor: 'horas_practicas' },
+    { 
+      header: 'Estado', 
+      accessor: 'activo',
+      render: (row) => (
+        <span 
+          className={`status-badge ${row.activo ? 'status-active' : 'status-inactive'} cursor-pointer`}
+          onClick={() => toggleStatus(row.id_asignatura, row.activo, row.nombre)}
+          title={row.activo ? "Clic para dar de baja" : "Clic para reactivar"}
+        >
+          {row.activo ? 'Activo' : 'Inactivo'}
+        </span>
+      )
+    }
+  ], [toggleStatus]);
+
+  const filteredMaterias = useMemo(() => {
+    return materias.filter(m => {
+      // filtro de texto
+      const lower = searchTerm.toLowerCase();
+      const matchesSearch = !searchTerm || 
+        m.nombre?.toLowerCase().includes(lower) || 
+        m.codigo?.toLowerCase().includes(lower);
+
+      // filtro tipo de aula
+      const matchesTipoAula = !filterTipoAula || m.requiere_tipo_aula === filterTipoAula;
+
+      // filtro estado
+      let matchesEstado = true;
+      if (filterEstado === "activos") matchesEstado = m.activo === true;
+      if (filterEstado === "inactivos") matchesEstado = m.activo === false;
+
+      return matchesSearch && matchesTipoAula && matchesEstado;
+    });
+  }, [materias, searchTerm, filterTipoAula, filterEstado]);
 
   const openAddModal = () => {
     setNotificationModal({ show: false, message: '', type: 'error' });
@@ -172,9 +202,12 @@ export const useMaterias = () => {
 
   return {
     materias: filteredMaterias, tiposAula, planes, ciclos, columns,
-    searchTerm, setSearchTerm, modalState, loading,
+    searchTerm, setSearchTerm, 
+    filterTipoAula, setFilterTipoAula,
+    filterEstado, setFilterEstado,
+    modalState, loading,
     openAddModal, openEditModal, closeModal, 
-    handleSaveMateria, handleInputChange,
+    handleSaveMateria, handleInputChange, executeToggleStatus,
     notificationModal, setNotificationModal,
     notification, setNotification
   };

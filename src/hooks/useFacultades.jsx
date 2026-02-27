@@ -3,24 +3,21 @@ import { apiRequest } from '../services/api';
 
 export const useFacultades = () => {
   const [facultades, setFacultades] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
   
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterEstado, setFilterEstado] = useState(""); 
+  
   const [notificationModal, setNotificationModal] = useState({
-    show: false,
-    message: '',
-    type: 'error'
+    show: false, message: '', type: 'error'
   });
 
   const [notification, setNotification] = useState({
-    show: false,
-    message: '',
-    type: 'error'
+    show: false, message: '', type: 'error'
   });
   
   const [modalState, setModalState] = useState({
-    isOpen: false,
-    type: 'add',
+    isOpen: false, type: 'add',
     data: { nombre: '', descripcion: '', activo: true }
   });
 
@@ -31,6 +28,7 @@ export const useFacultades = () => {
       setFacultades(data);
     } catch (error) {
       console.error("Error al cargar facultades:", error);
+      setNotification({ show: true, message: "Error al cargar las facultades.", type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -48,36 +46,39 @@ export const useFacultades = () => {
     }));
   };
 
-  // Función para Desactivar desde la tabla
-  const toggleStatus = useCallback(async (id, currentStatus) => {
-    if (!currentStatus) return;
+  const toggleStatus = useCallback((id, currentStatus, nombre) => {
+    setNotificationModal({ show: false, message: '', type: 'error' });
+    setModalState({
+      isOpen: true,
+      type: 'confirmToggle',
+      data: { id_facultad: id, activo: currentStatus, nombre: nombre }
+    });
+  }, []);
 
-    if (window.confirm("¿Confirma dar de baja esta facultad?")) {
-      try {
-        await apiRequest(`/facultades/desactivar/${id}`, { method: 'PUT' });
-        await fetchFacultades();
-        setNotification({
-          show: true,
-          message: "Facultad dada de baja exitosamente",
-          type: 'success'
-        });
-      } catch (error) {
-        setNotification({
-          show: true,
-          message: error.message,
-          type: 'error'
-        });
-      }
+  const executeToggleStatus = async () => {
+    const { id_facultad, activo } = modalState.data;
+    const endpoint = activo ? `/facultades/desactivar/${id_facultad}` : `/facultades/activar/${id_facultad}`;
+
+    try {
+      await apiRequest(endpoint, { method: 'PUT' });
+      await fetchFacultades();
+      setNotification({
+        show: true,
+        message: activo ? "Facultad dada de baja exitosamente" : "Facultad reactivada exitosamente",
+        type: 'success'
+      });
+      closeModal();
+    } catch (error) {
+      console.error("Error al cambiar estado:", error);
+      setNotificationModal({
+        show: true, message: error.message || "Error al cambiar el estado", type: 'error'
+      });
     }
-  }, [fetchFacultades]);
+  };
 
   const handleSaveFacultad = async (formData) => {
     if (!formData.nombre) {
-      setNotificationModal({
-        show: true,
-        message: "El nombre es obligatorio.",
-        type: 'error'
-      });
+      setNotificationModal({ show: true, message: "El nombre es obligatorio.", type: 'error' });
       return;
     }
 
@@ -87,30 +88,19 @@ export const useFacultades = () => {
           method: 'POST',
           body: JSON.stringify({ nombre: formData.nombre, descripcion: formData.descripcion })
         });
-        setNotificationModal({
-          show: true,
-          message: "Facultad creada exitosamente",
-          type: 'success'
-        });
+        setNotificationModal({ show: true, message: "Facultad creada exitosamente", type: 'success' });
       } else {
         await apiRequest(`/facultades/actualizar/${formData.id_facultad}`, {
           method: 'PUT',
           body: JSON.stringify({ nombre: formData.nombre, descripcion: formData.descripcion })
         });
-        setNotificationModal({
-          show: true,
-          message: "Facultad actualizada exitosamente",
-          type: 'success'
-        });
+        setNotificationModal({ show: true, message: "Facultad actualizada exitosamente", type: 'success' });
       }
       await fetchFacultades();
-      closeModal();
+      setTimeout(() => closeModal(), 1500);
     } catch (error) {
-      setNotificationModal({
-        show: true,
-        message: error.message,
-        type: 'error'
-      });
+      console.error("Error al guardar facultad:", error);
+      setNotificationModal({ show: true, message: error.message || "Error al guardar", type: 'error' });
     }
   };
 
@@ -123,8 +113,8 @@ export const useFacultades = () => {
       render: (row) => (
         <span 
           className={`status-badge ${row.activo ? 'status-active' : 'status-inactive'} cursor-pointer`}
-          onClick={() => toggleStatus(row.id_facultad, row.activo)}
-          title={row.activo ? "Clic para dar de baja" : "Inactiva"}
+          onClick={() => toggleStatus(row.id_facultad, row.activo, row.nombre)}
+          title={row.activo ? "Clic para dar de baja" : "Clic para reactivar"}
         >
           {row.activo ? 'Activo' : 'Inactivo'}
         </span>
@@ -133,14 +123,22 @@ export const useFacultades = () => {
   ], [toggleStatus]);
 
   const filteredFacultades = useMemo(() => {
-    const lower = searchTerm.toLowerCase();
-    return facultades.filter(f => 
-      f.nombre?.toLowerCase().includes(lower) || 
-      f.descripcion?.toLowerCase().includes(lower)
-    );
-  }, [facultades, searchTerm]);
+    return facultades.filter(f => {
+      const lower = searchTerm.toLowerCase();
+      const matchesSearch = !searchTerm || 
+        f.nombre?.toLowerCase().includes(lower) || 
+        f.descripcion?.toLowerCase().includes(lower);
+      
+      let matchesEstado = true;
+      if (filterEstado === "activos") matchesEstado = f.activo === true;
+      if (filterEstado === "inactivos") matchesEstado = f.activo === false;
+
+      return matchesSearch && matchesEstado;
+    });
+  }, [facultades, searchTerm, filterEstado]);
 
   const openAddModal = () => {
+    setNotificationModal({ show: false, message: '', type: 'error' });
     setModalState({ 
       isOpen: true, type: 'add', 
       data: { nombre: '', descripcion: '', activo: true } 
@@ -148,23 +146,23 @@ export const useFacultades = () => {
   };
 
   const openEditModal = (item) => {
+    setNotificationModal({ show: false, message: '', type: 'error' });
     setModalState({ isOpen: true, type: 'edit', data: { ...item } });
   };
 
-  const closeModal = () => setModalState(prev => ({ ...prev, isOpen: false }));
+  const closeModal = () => {
+    setNotificationModal({ show: false, message: '', type: 'error' });
+    setModalState(prev => ({ ...prev, isOpen: false }));
+  };
 
   return {
-    facultades: filteredFacultades,
-    columns,
+    facultades: filteredFacultades, columns,
     searchTerm, setSearchTerm,
-    modalState,
-    openAddModal, openEditModal, closeModal,
-    handleSaveFacultad,
-    handleInputChange,
-    loading,
-    notification,
-    setNotification,
-    notificationModal,
-    setNotificationModal
+    filterEstado, setFilterEstado,
+    modalState, openAddModal, openEditModal, closeModal,
+    handleSaveFacultad, handleInputChange, loading,
+    executeToggleStatus,
+    notification, setNotification,
+    notificationModal, setNotificationModal
   };
 };

@@ -4,8 +4,12 @@ import { apiRequest } from '../services/api';
 export const useAulas = () => {
   const [aulas, setAulas] = useState([]);
   const [tipos, setTipos] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterEstado, setFilterEstado] = useState("");
+  const [filterTipo, setFilterTipo] = useState("");
+  const [filterUbicacion, setFilterUbicacion] = useState("");
+  const [filterEdificio, setFilterEdificio] = useState("");
 
   const [modalState, setModalState] = useState({
     isOpen: false,
@@ -81,9 +85,7 @@ export const useAulas = () => {
       await fetchAulas();
       closeModal();
     } catch (error) {
-      if (error.statusCode >= 500) {
-        console.error("Error al cambiar estado:", error);
-      }
+      console.error("Error al cambiar estado:", error);
       setNotificationModal({
         show: true,
         message: error.message || "No se pudo cambiar el estado del aula",
@@ -118,29 +120,40 @@ export const useAulas = () => {
   ], [toggleStatus]);
 
   const filteredAulas = useMemo(() => {
-    if (!searchTerm) return aulas;
-    const lower = searchTerm.toLowerCase();
-    
-    return aulas.filter(a => 
-      a.nombre?.toLowerCase().includes(lower) || 
-      a.edificio?.toLowerCase().includes(lower) ||
-      a.tipo_aula?.nombre?.toLowerCase().includes(lower)
-    );
-  }, [aulas, searchTerm]);
+    return aulas.filter(a => {
+      const lower = searchTerm.toLowerCase();
+      const matchesSearch = !searchTerm || 
+        a.nombre?.toLowerCase().includes(lower) || 
+        a.capacidad?.toString().includes(lower);
+      
+      const matchesEstado = filterEstado === "" || 
+                            (filterEstado === "activos" ? a.activo : !a.activo);
+      
+      const matchesTipo = !filterTipo || a.id_tipo_aula === filterTipo;
+      const matchesUbicacion = !filterUbicacion || a.ubicacion === filterUbicacion;
+      const matchesEdificio = !filterEdificio || a.edificio === filterEdificio;
+
+      return matchesSearch && matchesEstado && matchesTipo && matchesUbicacion && matchesEdificio;
+    });
+  }, [aulas, searchTerm, filterEstado, filterTipo, filterUbicacion, filterEdificio]);
+
+  // toma los edificios dinamicamente de la lista de aulas
+  const opcionesEdificios = useMemo(() => {
+    const edificiosSet = new Set(aulas.map(a => a.edificio).filter(Boolean));
+    return Array.from(edificiosSet)
+      .sort() // Orden alfabetico
+      .map(edificio => ({ label: `Edificio ${edificio}`, value: edificio }));
+  }, [aulas]);
 
   const handleSaveAula = async (formData) => {
     if (!formData.nombre || !formData.edificio || !formData.id_tipo_aula || !formData.capacidad) {
-      setNotificationModal({
-        show: true, message: "Complete los campos obligatorios.", type: 'error'
-      });
+      setNotificationModal({ show: true, message: "Complete los campos obligatorios.", type: 'error' });
       return;
     }
 
     const regexLetra = /^[a-zA-Z]$/;
     if (!regexLetra.test(formData.edificio.trim())) {
-      setNotificationModal({
-        show: true, message: "El edificio debe ser exactamente una letra del abecedario (Ej: A, B, C).", type: 'error'
-      });
+      setNotificationModal({ show: true, message: "El edificio debe ser exactamente una letra (Ej: A, B, C).", type: 'error' });
       return;
     }
 
@@ -166,12 +179,8 @@ export const useAulas = () => {
       await fetchAulas();
       setTimeout(() => closeModal(), 1500);
     } catch (error) {
-      if (error.statusCode >= 500) {
-        console.error("Error al guardar aula:", error);
-      }
-      setNotificationModal({
-        show: true, message: error.message || "Error al procesar la solicitud", type: 'error'
-      });
+      console.error("Error al guardar aula:", error);
+      setNotificationModal({ show: true, message: error.message || "Error al procesar la solicitud", type: 'error' });
     }
   };
 
@@ -179,18 +188,14 @@ export const useAulas = () => {
     setNotificationModal({ show: false, message: '', type: 'error' });
     setModalState({ 
       isOpen: true, 
-      type: 'add', 
-      data: { nombre: '', edificio: '', ubicacion: 'Campus', capacidad: 30, id_tipo_aula: '', activo: true } 
+      type: 'add',
+      data: { nombre: '', edificio: '', ubicacion: 'Campus', capacidad: '', id_tipo_aula: '', activo: true } 
     });
   };
 
   const openEditModal = (item) => {
     setNotificationModal({ show: false, message: '', type: 'error' });
-    setModalState({ 
-      isOpen: true, 
-      type: 'edit', 
-      data: { ...item } 
-    });
+    setModalState({ isOpen: true, type: 'edit', data: { ...item } });
   };
 
   const closeModal = () => {
@@ -200,11 +205,14 @@ export const useAulas = () => {
 
   return {
     aulas: filteredAulas, tipos, columns,
-    searchTerm, setSearchTerm, modalState,
-    openAddModal, openEditModal, closeModal,
-    handleSaveAula, handleInputChange, loading,
-    executeToggleStatus,
-    notificationModal, setNotificationModal,
-    notification, setNotification
+    searchTerm, setSearchTerm, 
+    filterEstado, setFilterEstado,
+    filterTipo, setFilterTipo,
+    filterUbicacion, setFilterUbicacion,
+    filterEdificio, setFilterEdificio,
+    opcionesEdificios, // Pasamos las opciones dinámicas
+    modalState, openAddModal, openEditModal, closeModal,
+    handleSaveAula, handleInputChange, loading, executeToggleStatus,
+    notificationModal, setNotificationModal, notification, setNotification
   };
 };
