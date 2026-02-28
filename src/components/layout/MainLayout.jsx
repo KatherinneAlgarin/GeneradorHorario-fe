@@ -52,7 +52,7 @@ const MainLayout = () => {
 
               <li className="nav-item">
                 <Link to="/admin/docentes" className="nav-link">
-                  Gestión Docente
+                  Gestión Usuarios
                 </Link>
               </li>
 

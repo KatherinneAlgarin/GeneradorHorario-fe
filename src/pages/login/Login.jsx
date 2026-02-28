@@ -3,27 +3,24 @@ import '../../styles/Login.css';
 
 import { supabase } from '../../services/supabaseClient';
 import { getUserRole } from '../../services/authService';
+import { apiRequest } from '../../services/api'; 
 import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
   const navigate = useNavigate();
-
   const [currentView, setCurrentView] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [recoveryEmail, setRecoveryEmail] = useState('');
-  const [recoveryCode, setRecoveryCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-
-  //estados de control
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [pendingUser, setPendingUser] = useState(null); 
 
-  const changeView = (view) => {
-    setError('');
-    setIsLoading(false); //apagar el loader al cambiar la vista
-    setCurrentView(view);
+  const redirectByRole = (rol) => {
+    if (rol === "docente") navigate("/docente");
+    if (rol === "decano") navigate("/decano");
+    if (rol === "admin_general") navigate("/admin");
   };
 
   const handleLogin = async (e) => {
@@ -31,12 +28,12 @@ export default function Login() {
     setError("");
     setIsLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (error) {
+    if (authError) {
       setIsLoading(false);
       setError("Correo o contraseña incorrectos.");
       return;
@@ -58,100 +55,81 @@ export default function Login() {
       return;
     }
 
+    const needsPasswordChange = data.user?.user_metadata?.needs_password_change;
+
+    if (needsPasswordChange) {
+      setIsLoading(false);
+      setPendingUser({ id: data.user.id, rol: userRole.rol });
+      setCurrentView('force-password-change'); 
+      return;
+    }
+
     setIsLoading(false);
-
-    if (userRole.rol === "docente") {
-      navigate("/docente");
-    }
-
-    if (userRole.rol === "decano") {
-      navigate("/decano");
-    }
-
-    if (userRole.rol === "admin_general") {
-      navigate("/admin");
-    }
+    redirectByRole(userRole.rol);
   };
 
-  const handleSendCode = (e) => {
+  const handleForcePasswordUpdate = async (e) => {
     e.preventDefault();
-    if (!recoveryEmail) {
-      setError("Por favor ingresa tu correo.");
-      return;
-    }
-    
-    setIsLoading(true);
-    
-    setTimeout(() => {
-      console.log("Enviando código a:", recoveryEmail);
-      setIsLoading(false);
-      changeView('forgot-code');
-    }, 1500);
-  };
-
-  const handleVerifyCode = (e) => {
-    e.preventDefault();
-    if (recoveryCode.length < 4) {
-      setError("El código parece incompleto.");
-      return;
-    }
+    setError("");
+    //validaciones para no tener que estar esperando la respuesta del backend
+    if (newPassword.length < 8) return setError("La contraseña debe tener al menos 8 caracteres.");
+    if (!/[A-Z]/.test(newPassword)) return setError("La contraseña debe contener al menos una letra mayúscula.");
+    if (!/[a-z]/.test(newPassword)) return setError("La contraseña debe contener al menos una letra minúscula.");
+    if (!/\d/.test(newPassword)) return setError("La contraseña debe contener al menos un número.");
+    if (!/[^a-zA-Z0-9]/.test(newPassword)) return setError("La contraseña debe contener al menos un carácter especial (ej: !@#$%^&*).");
+    if (newPassword !== confirmPassword) return setError("Las contraseñas no coinciden.");
 
     setIsLoading(true);
 
-    setTimeout(() => {
-      console.log("Verificando código:", recoveryCode);
+    try {
+      await apiRequest('/auth/cambiar-password', {
+        method: 'POST',
+        body: JSON.stringify({
+          id_auth_user: pendingUser.id,
+          nueva_password: newPassword
+        })
+      });
+
+      alert("¡Contraseña actualizada con éxito! Bienvenido al sistema.");
       setIsLoading(false);
-      changeView('forgot-reset');
-    }, 1500);
+      
+      redirectByRole(pendingUser.rol);
+      
+    } catch (err) {
+      setIsLoading(false);
+      setError(err.message || "Error al actualizar la contraseña");
+    }
   };
 
-  const handleResetPassword = (e) => {
-    e.preventDefault();
-    
-    if (newPassword.length < 8) {
-      setError("La contraseña debe tener al menos 8 caracteres.");
-      return;
-    }
-
-    if (newPassword !== confirmPassword) {
-      setError("Las contraseñas no coinciden.");
-      return;
-    }
-
-    setIsLoading(true);
-
-    setTimeout(() => {
-      console.log("Contraseña cambiada exitosamente");
-      alert("¡Contraseña actualizada! Inicia sesión.");
-
-      setRecoveryEmail('');
-      setRecoveryCode('');
-      setNewPassword('');
-      setConfirmPassword('');
-      setIsLoading(false);
-      changeView('login');
-    }, 1500);
+  const handleCancelUpdate = async () => {
+    await supabase.auth.signOut();
+    setPendingUser(null);
+    setNewPassword('');
+    setConfirmPassword('');
+    setError('');
+    setCurrentView('login');
   };
 
-  let content;
-  switch (currentView) {
-    case 'login':
-      content = (
+  return (
+    <div className="login-card">
+      {currentView === 'login' ? (
         <>
           <h1 className="login-title">Gestor de Horarios</h1>
           <form onSubmit={handleLogin}>
             {error && <div className="error-message">{error}</div>}
+            
             <div className="form-group">
               <label>Correo electrónico</label>
               <input 
                 type="email" 
-                placeholder="correo@ejemplo.com" 
+                placeholder="correo@catolica.edu.sv" 
                 required 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
               />
             </div>
+            
             <div className="form-group">
               <label>Contraseña</label>
               <input 
@@ -163,98 +141,22 @@ export default function Login() {
                 disabled={isLoading}
               />
             </div>
+            
             <button type="submit" className="btn-login" disabled={isLoading}>
               {isLoading ? 'Iniciando...' : 'Iniciar Sesión'}
             </button>
           </form>
         </>
-      );
-      break;
-
-    case 'forgot-email':
-      content = (
+      ) : (
         <>
-          <h1 className="login-title">Gestor de Horarios</h1>
-          <p className="login-subtitle">Recuperación de contraseña</p>
-          
-          {error && <div className="error-message">{error}</div>}
-
-          <form onSubmit={handleSendCode}>
-            <div className="form-group">
-              <label>Correo electrónico</label>
-              <input 
-                type="email" 
-                placeholder="correo@ejemplo.com" 
-                required 
-                value={recoveryEmail}
-                onChange={(e) => setRecoveryEmail(e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
-            <p className="help-text">Ingresa tu correo para recibir el código de verificación</p>
-            
-            <button type="submit" className="btn-login" disabled={isLoading}>
-              {isLoading ? 'Enviando...' : 'Recibir código'}
-            </button>
-          </form>
-          
-          {!isLoading && (
-            <span className="back-to-login" onClick={() => changeView('login')}>
-              Volver al inicio de sesión
-            </span>
-          )}
-        </>
-      );
-      break;
-
-    case 'forgot-code':
-      content = (
-        <>
-          <h1 className="login-title">Gestor de Horarios</h1>
-          <p className="login-subtitle">Verificación de código</p>
+          <h1 className="login-title">Actualización Obligatoria</h1>
+          <p style={{ fontSize: '0.85rem', color: '#666', textAlign: 'center', marginBottom: '15px' }}>
+            Por tu seguridad, debes cambiar la contraseña temporal antes de acceder al sistema.
+          </p>
 
           {error && <div className="error-message">{error}</div>}
 
-          <form onSubmit={handleVerifyCode}>
-            <div className="form-group">
-              <label>Ingresar código</label>
-              <input 
-                type="text" 
-                placeholder="9999" 
-                className="input-code" 
-                maxLength="6" 
-                required 
-                value={recoveryCode}
-                onChange={(e) => setRecoveryCode(e.target.value)}
-                disabled={isLoading}
-                inputMode="numeric"
-              />
-              <span className="help-text">Revisa tu correo y escribe el código de 6 dígitos</span>
-            </div>
-            
-            <button type="submit" className="btn-login" disabled={isLoading}>
-              {isLoading ? 'Verificando...' : 'Verificar código'}
-            </button>
-          </form>
-          
-          {!isLoading && (
-            <span className="back-to-login" onClick={() => changeView('login')}>
-              Volver al inicio de sesión
-            </span>
-          )}
-        </>
-      );
-      break;
-
-    case 'forgot-reset':
-      content = (
-        <>
-          <h1 className="login-title">Gestor de Horarios</h1>
-          <p className="login-subtitle">Establecer nueva contraseña</p>
-
-          {error && <div className="error-message">{error}</div>}
-
-          <form onSubmit={handleResetPassword}>
+          <form onSubmit={handleForcePasswordUpdate}>
             <div className="form-group">
               <label>Nueva contraseña</label>
               <input 
@@ -266,6 +168,7 @@ export default function Login() {
                 disabled={isLoading}
               />
             </div>
+            
             <div className="form-group">
               <label>Confirmar contraseña</label>
               <input 
@@ -277,28 +180,33 @@ export default function Login() {
                 disabled={isLoading}
               />
             </div>
+
+            <ul style={{ fontSize: '0.75rem', color: '#777', marginBottom: '20px', paddingLeft: '20px', lineHeight: '1.4' }}>
+              <li>Al menos 8 caracteres</li>
+              <li>Una letra mayúscula y una minúscula</li>
+              <li>Al menos un número (0-9)</li>
+              <li>Un carácter especial (!@#$%^&*)</li>
+            </ul>
             
-            <button type="submit" className="btn-login" disabled={isLoading}>
-              {isLoading ? 'Guardando...' : 'Confirmar'}
+            <button type="submit" className="btn-login" disabled={isLoading} style={{ marginBottom: '10px' }}>
+              {isLoading ? 'Guardando...' : 'Confirmar y Entrar'}
             </button>
+
+            {!isLoading && (
+              <button 
+                type="button" 
+                onClick={handleCancelUpdate} 
+                style={{ 
+                  background: 'transparent', border: 'none', width: '100%', 
+                  color: '#666', cursor: 'pointer', fontSize: '0.9rem', marginTop: '5px' 
+                }}
+              >
+                Cancelar
+              </button>
+            )}
           </form>
-          
-          {!isLoading && (
-            <span className="back-to-login" onClick={() => changeView('login')}>
-              Volver al inicio de sesión
-            </span>
-          )}
         </>
-      );
-      break;
-
-    default:
-      content = null;
-  }
-
-  return (
-    <div className="login-card">
-      {content}
+      )}
     </div>
   );
 }

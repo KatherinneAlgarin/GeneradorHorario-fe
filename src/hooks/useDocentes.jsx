@@ -1,28 +1,15 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-// import { apiRequest } from '../services/api'; // cuando ya haya backend esta comentado para futuros cambios
-
-const initialDocentes = [
-  { id_docente: "d-001", nombres: "Juan Carlos", apellidos: "Pérez", tipo: "Tiempo Completo", carga_maxima: 40, activo: true },
-  { id_docente: "d-002", nombres: "Maria", apellidos: "Rodriguez", tipo: "Hora Clase", carga_maxima: 20, activo: true },
-  { id_docente: "d-003", nombres: "Carlos", apellidos: "Gómez", tipo: "Hora Clase", carga_maxima: 12, activo: false },
-];
-
-const mockClasesHistory = [
-  { id_clase: 'c1', id_docente: 'd-001', materia: 'Matemáticas I', ciclo: '01-2025', codigo: 'MAT101' },
-  { id_clase: 'c2', id_docente: 'd-001', materia: 'Cálculo II', ciclo: '02-2024', codigo: 'MAT102' },
-  { id_clase: 'c3', id_docente: 'd-002', materia: 'Física I', ciclo: '01-2025', codigo: 'FIS101' },
-];
+import { apiRequest } from '../services/api'; 
 
 export const useDocentes = () => {
   const [docentes, setDocentes] = useState([]); 
+  const [facultades, setFacultades] = useState([]); 
   const [loading, setLoading] = useState(false);
-  
+  const [isSaving, setIsSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterTipo, setFilterTipo] = useState(""); 
   const [filterEstado, setFilterEstado] = useState("");
 
-  const [teachingHistory, setTeachingHistory] = useState([]);
-  
   const [modalState, setModalState] = useState({
     isOpen: false, type: 'view', data: null
   });
@@ -35,25 +22,25 @@ export const useDocentes = () => {
     show: false, message: '', type: 'error'
   });
 
-  const fetchDocentes = useCallback(async () => {
+  const fetchDatos = useCallback(async () => {
     setLoading(true);
     try {
-      //const data = await apiRequest('/docentes');
-      await new Promise(resolve => setTimeout(resolve, 500)); 
-      setDocentes(initialDocentes);
+      const [docentesData, facultadesData] = await Promise.all([
+        apiRequest('/docentes'),
+        apiRequest('/facultades')
+      ]);
+      setDocentes(Array.isArray(docentesData) ? docentesData : []);
+      setFacultades(Array.isArray(facultadesData) ? facultadesData : []);
     } catch (error) {
-      console.error("Error al cargar docentes:", error);
-      setNotification({ show: true, message: "Error al cargar docentes.", type: 'error' });
+      console.error("Error al cargar datos:", error);
+      setNotification({ show: true, message: "Error de conexión al cargar datos.", type: 'error' });
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchDocentes();
-  }, [fetchDocentes]);
+  useEffect(() => { fetchDatos(); }, [fetchDatos]);
 
-  // funcion que escucha cambios en el teclado
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setModalState(prev => ({
@@ -62,74 +49,92 @@ export const useDocentes = () => {
     }));
   };
 
+  const handleCheckboxChange = (id_facultad) => {
+    setModalState(prev => {
+      const actuales = prev.data.facultades || [];
+      const nuevas = actuales.includes(id_facultad)
+        ? actuales.filter(id => id !== id_facultad) 
+        : [...actuales, id_facultad]; 
+      
+      return { ...prev, data: { ...prev.data, facultades: nuevas } };
+    });
+  };
+
   const filteredDocentes = useMemo(() => {
     return docentes.filter(docente => {
       const lowerSearch = searchTerm.toLowerCase();
       const matchesSearch = !searchTerm || 
-        docente.nombres.toLowerCase().includes(lowerSearch) ||
-        docente.apellidos.toLowerCase().includes(lowerSearch);
+        docente.nombres?.toLowerCase().includes(lowerSearch) ||
+        docente.apellidos?.toLowerCase().includes(lowerSearch) ||
+        docente.correo?.toLowerCase().includes(lowerSearch);
 
       const matchesTipo = !filterTipo || docente.tipo === filterTipo;
       
       let matchesEstado = true;
-      if (filterEstado === "activos") matchesEstado = docente.activo === true;
+      if (filterEstado === "activos") matchesEstado = docente.activo !== false; 
       if (filterEstado === "inactivos") matchesEstado = docente.activo === false;
 
       return matchesSearch && matchesTipo && matchesEstado;
     });
   }, [docentes, searchTerm, filterTipo, filterEstado]);
 
-  const toggleStatus = useCallback(async (id, currentStatus) => {
-    const accionTexto = currentStatus ? "dar de baja" : "reactivar";
-    
-    if (window.confirm(`¿Confirma ${accionTexto} este docente?`)) {
-      try {
-        // const endpoint = currentStatus ? `/docentes/desactivar/${id}` : `/docentes/activar/${id}`;
-        setDocentes(prev => prev.map(d => d.id_docente === id ? { ...d, activo: !currentStatus } : d));
-        
-        setNotification({
-          show: true,
-          message: currentStatus ? 'Docente dado de baja' : 'Docente reactivado',
-          type: 'success'
-        });
-      } catch (error) {
-        console.error("Error al cambiar estado:", error);
-        setNotification({ show: true, message: "Error al cambiar estado", type: 'error' });
-      }
-    }
+  const confirmChangeStatus = useCallback((docente, action) => {
+    setNotificationModal({ show: false, message: '', type: 'error' });
+    setModalState({
+      isOpen: true,
+      type: 'confirmStatusChange',
+      data: { id_docente: docente.id_docente, nombre: `${docente.nombres} ${docente.apellidos}`, action }
+    });
   }, []);
 
+  const executeStatusChange = async () => {
+    if (isSaving) return;
+    const { id_docente, action } = modalState.data;
+    
+    setIsSaving(true);
+    try {
+      const endpoint = action === 'desactivar' ? `/docentes/desactivar/${id_docente}` : `/docentes/activar/${id_docente}`;
+      await apiRequest(endpoint, { method: 'PUT' });
+      
+      setNotification({
+        show: true,
+        message: action === 'desactivar' ? 'Docente eliminado (Inactivo)' : 'Docente reactivado',
+        type: 'success'
+      });
+      await fetchDatos();
+      closeModal();
+    } catch (error) {
+      console.error("Error al cambiar estado:", error);
+      setNotificationModal({ show: true, message: error.message || "Error al cambiar el estado del docente", type: 'error' });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const columns = useMemo(() => [
-    { header: 'Nombres', accessor: 'nombres' },
-    { header: 'Apellidos', accessor: 'apellidos' },
-    { header: 'Tipo', accessor: 'tipo' },
-    { header: 'Carga Máx', accessor: 'carga_maxima' },
+    { header: 'Docente', render: (row) => `${row.nombres} ${row.apellidos}` },
+    { header: 'Correo', accessor: 'correo' },
+    { header: 'Contrato', accessor: 'tipo' },
+    { header: 'Carga (Min-Máx)', render: (row) => `${row.carga_minima ?? 0}h - ${row.carga_maxima ?? 0}h` },
     { 
       header: 'Estado', accessor: 'activo',
       render: (row) => (
-        <span 
-          className={`status-badge ${row.activo ? 'status-active' : 'status-inactive'} cursor-pointer`}
-          onClick={() => toggleStatus(row.id_docente, row.activo)}
-          title={row.activo ? 'Clic para dar de baja' : 'Clic para reactivar'}
-        >
-          {row.activo ? 'Activo' : 'Inactivo'}
+        <span className={`status-badge ${row.activo !== false ? 'status-active' : 'status-inactive'}`}>
+          {row.activo !== false ? 'Activo' : 'Inactivo'}
         </span>
       )
     }
-  ], [toggleStatus]);
-
-  const openDetailsModal = (docente) => {
-    const history = mockClasesHistory.filter(h => h.id_docente === docente.id_docente);
-    setTeachingHistory(history);
-    setNotificationModal({ show: false, message: '', type: 'error' });
-    setModalState({ isOpen: true, type: 'details', data: docente });
-  };
+  ], []);
 
   const openAddModal = () => {
     setNotificationModal({ show: false, message: '', type: 'error' });
     setModalState({ 
       isOpen: true, type: 'add',
-      data: { nombres: '', apellidos: '', tipo: 'Tiempo Completo', carga_maxima: '', activo: true } 
+      data: { 
+        nombres: '', apellidos: '', email: '',
+        tipo: 'Tiempo Completo', carga_minima: '', carga_maxima: '', 
+        facultades: []
+      } 
     });
   };
 
@@ -139,7 +144,10 @@ export const useDocentes = () => {
       isOpen: true, type: 'edit', 
       data: { 
         ...docente,
-        carga_maxima: docente.carga_maxima === 0 ? '' : docente.carga_maxima
+        email: docente.correo,
+        carga_minima: docente.carga_minima === 0 ? '' : docente.carga_minima,
+        carga_maxima: docente.carga_maxima === 0 ? '' : docente.carga_maxima,
+        facultades: docente.facultades ? docente.facultades.map(f => f.id_facultad) : []
       } 
     });
   };
@@ -147,49 +155,68 @@ export const useDocentes = () => {
   const closeModal = () => {
     setNotificationModal({ show: false, message: '', type: 'error' });
     setModalState(prev => ({ ...prev, isOpen: false }));
-    setTeachingHistory([]); 
   };
 
   const handleSaveDocente = async (formData) => {
-    if (!formData.nombres || !formData.apellidos || !formData.carga_maxima) {
-      setNotificationModal({ show: true, message: "Todos los campos son obligatorios.", type: 'error' });
+    if (isSaving) return;
+
+    if (!formData.nombres || !formData.apellidos || !formData.carga_minima || !formData.carga_maxima) {
+      setNotificationModal({ show: true, message: "Completa los campos obligatorios.", type: 'error' });
+      return;
+    }
+    if (modalState.type === 'add' && !formData.email) {
+      setNotificationModal({ show: true, message: "El correo es obligatorio para crear el usuario.", type: 'error' });
+      return;
+    }
+    if (parseInt(formData.carga_minima) > parseInt(formData.carga_maxima)) {
+      setNotificationModal({ show: true, message: "La carga mínima no puede ser mayor a la máxima.", type: 'error' });
+      return;
+    }
+    if (!formData.facultades || formData.facultades.length === 0) {
+      setNotificationModal({ show: true, message: "Debe asignar al menos una facultad.", type: 'error' });
       return;
     }
 
-    const dataToSave = {
-      ...formData,
-      carga_maxima: parseInt(formData.carga_maxima) || 0
+    const payload = {
+      nombres: formData.nombres,
+      apellidos: formData.apellidos,
+      tipo: formData.tipo,
+      carga_minima: parseInt(formData.carga_minima),
+      carga_maxima: parseInt(formData.carga_maxima),
+      facultades: formData.facultades
     };
 
+    if (modalState.type === 'add') {
+      payload.email = formData.email;
+    }
+
+    setIsSaving(true);
+
     try {
-      if (modalState.type === 'add') {
-        const newDocente = { ...dataToSave, id_docente: crypto.randomUUID(), activo: true };
-        setDocentes(prev => [...prev, newDocente]);
-      } else {
-        setDocentes(prev => prev.map(d => d.id_docente === dataToSave.id_docente ? dataToSave : d));
-      }
+      const url = modalState.type === 'add' ? '/docentes' : `/docentes/actualizar/${formData.id_docente}`;
+      const method = modalState.type === 'add' ? 'POST' : 'PUT';
+
+      await apiRequest(url, { method, body: JSON.stringify(payload) });
 
       setNotificationModal({
-        show: true,
-        message: modalState.type === 'add' ? 'Docente registrado' : 'Docente actualizado',
-        type: 'success'
+        show: true, message: modalState.type === 'add' ? 'Docente registrado exitosamente' : 'Docente actualizado exitosamente', type: 'success'
       });
+      
+      await fetchDatos();
       setTimeout(() => closeModal(), 1500);
     } catch (error) {
-      console.error("Error al guardar docente:", error);
-      setNotificationModal({ show: true, message: "Error al procesar la solicitud", type: 'error' });
+      console.error("Error al guardar:", error);
+      setNotificationModal({ show: true, message: error.message || "Error al procesar la solicitud", type: 'error' });
+    } finally {
+      setIsSaving(false);
     }
   };
 
   return {
-    docentes: filteredDocentes, columns,
-    searchTerm, setSearchTerm,
-    filterTipo, setFilterTipo,       
-    filterEstado, setFilterEstado,   
-    modalState, teachingHistory, loading,
-    openAddModal, openEditModal, openDetailsModal, closeModal,
-    handleSaveDocente, handleInputChange, toggleStatus,
-    notificationModal, setNotificationModal,
-    notification, setNotification
+    docentes: filteredDocentes, facultades, columns,
+    searchTerm, setSearchTerm, filterTipo, setFilterTipo, filterEstado, setFilterEstado,   
+    modalState, loading, isSaving, openAddModal, openEditModal, closeModal,
+    handleSaveDocente, handleInputChange, handleCheckboxChange, confirmChangeStatus, executeStatusChange,
+    notificationModal, setNotificationModal, notification, setNotification
   };
 };
