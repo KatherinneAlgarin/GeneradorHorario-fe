@@ -10,6 +10,7 @@ import GestorInfraestructura from '../pages/admin/GestorInfraestructura';
 import RoleRoute from './RoleRoute';
 import HomeDocente from '../pages/docente/HomeDocente';
 import HomeDecano from '../pages/decano/HomeDecano';
+import RegistroDisponibilidad from '../pages/docente/RegistroDisponibilidad';
 
 export const AppRouter = () => {
     return (
@@ -46,6 +47,7 @@ export const AppRouter = () => {
                 }
             >
                 <Route index element={<HomeDocente />} /> 
+                <Route path="disponibilidad" element={<RegistroDisponibilidad />} />
             </Route>
                 
             {/* RUTA PROTEGIDA DECANO */}
